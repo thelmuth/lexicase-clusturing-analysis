@@ -38,13 +38,18 @@ reshape_data <- function(original_csv_data) {
   return(melted_data)
 }
 
+# Takes a data frame with a "generation" column, and splits that into one
+# CSV file per generation for loading into ParaView.
+write_paraview_files <- function(shaped_data) {
+  for (g in unique(shaped_data$generation)) {
+    this_gen <- subset(shaped_data, generation==g)[c("individual", "size", "total.error", "variable", "value", "discrete.value")]
+    write.csv(this_gen, file = paste("../data/Replace space with newline/rswn_lexicase_errors0.csv.", g, sep=""), sep=",", row.names=FALSE)
+  }  
+}
+
 data <- read.csv("../data/Replace space with newline/rswn_lexicase_errors0.csv")
 melted_data <- reshape_data(data)
 
 this_gen <- subset(melted_data, generation==50)[c("individual", "size", "total.error", "variable", "value", "discrete.value")]
 write.csv(this_gen, file = paste("foo.csv.", 50, sep=""), sep=",", row.names=FALSE)
 
-for (g in unique(melted_data$generation)) {
-  this_gen <- subset(melted_data, generation==g)[c("individual", "size", "total.error", "variable", "value", "discrete.value")]
-  write.csv(this_gen, file = paste("../data/Replace space with newline/rswn_lexicase_errors0.csv.", g, sep=""), sep=",", row.names=FALSE)
-}
