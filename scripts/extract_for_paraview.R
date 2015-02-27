@@ -1,5 +1,10 @@
 library("reshape2")
 
+# Takes a data frame in the form output by thelmuth's code and reshapes
+# it into "long" form in preparation for writing out the separate ParaView
+# files. It also and scales all the columns to the range [0, 1], taking the
+# log of all the error columns to give us a little better resolution in the
+# small values.
 reshape_data <- function(original_csv_data) {
   max_column = ncol(original_csv_data)
   first_test_case_index = match("TC0", names(original_csv_data))
@@ -26,6 +31,9 @@ reshape_data <- function(original_csv_data) {
   
   # Now we melt the data
   melted_data <- melt(scaled_data, id.vars=c("generation", "individual", "total.error", "size"))
+  
+  # Add the discrete.value column that converts the test case error values
+  # to either 0 (if the error was 0) or 1.
   melted_data$discrete.value = ifelse(melted_data$value==0, 0, 1)
   return(melted_data)
 }
