@@ -11,15 +11,17 @@ output:
 
 Tom Helmuth and I are trying to figure out the best way to try to automate the computation of clusters, and the _number_ of clusters in a bunch of GP data. Here I'm trying to work through some options and see if we can better understand the impact different algorithm and parameter choices.
 
-So, first we load some libraries.
+One worry Tom identified is that while lexicase will (hopefully) give us a significant number of identifiable clusters with some non-trivial distances between them, when using things like tournament selection the clusters are probably closer together. The concern is that the notions of distance may be relative, and the clustering algorithm will find just as many clusters with tournament selection, even though they're much closer together, i.e., the boundaries between the clusters aren't nearly as clear.
+
+My sense from going through this is that `apcluster` works nicely, and we just need to pick (and stick to) a sensible value of the `q` parameter. I think that if we apply `apcluster` to a few "real" data sets (unlike the synthetic sets here) we can identify a value of `q` that seems to give us reasonable numbers. Based on the results below, I'm thinking that we probably want a smaller value for `q` like the `q=0.1` used towards the end of this notebook.
+
+Before starting, we need to load some libraries:
 
 ```{r, message=FALSE}
 library('ggplot2')
 library('cluster')
 library('apcluster')
 ```
-
-One worry Tom identified is that while lexicase will (hopefully) give us a significant number of identifiable clusters with some non-trivial distances between them, when using things like tournament selection the clusters are probably closer together. The concern is that the notions of distance may be relative, and the clustering algorithm will find just as many clusters with tournament selection, even though they're much closer together, i.e., the boundaries between the clusters aren't nearly as clear.
 
 # Some test data
 
@@ -45,6 +47,21 @@ all_data <- rbind(spread_data, compact_data)
 ggplot(all_data, aes(x=x, y=y, color=kind)) + geom_point()
 ```
 
+Tom was also concerned that basic scaling might be a problem, and suggested that we take the `spread_data` and scale it by, say, 1/100, and see if we can still extract the original five clusters.
+
+```{r}
+scaled_data <- as.data.frame(scale(spread_data[, 1:2], center=FALSE, scale=c(100, 100)))
+scaled_data$kind = "Scaled"
+
+all_data <- rbind(all_data, scaled_data)
+ggplot(all_data, aes(x=x, y=y, color=kind)) + geom_point()
+```
+
+In this plot the `scaled_data` is just a little green dot, so let's just plot it on its own to confirm that it still has the original structure:
+```{r}
+ggplot(subset(all_data, kind=="Scaled"), aes(x=x, y=y, color=kind)) + geom_point()
+```
+
 # Trying Agnes clustering
 
 So first we'll try the `agnes` clustering algorithm.
@@ -66,6 +83,17 @@ plot(ag_compact, which.plots=2)
 ```
 
 ---
+
+## Agnes works fine on the scaled data
+
+If we apply `agnes` to the heavily scaled data, we get essentially the same clustering:
+
+```{r}
+ag_scaled <- agnes(scaled_data[, 1:2], stand=TRUE)
+plot(ag_scaled, which.plots=2)
+```
+
+In fact, I'm pretty sure the use of `stand=TRUE` in the `agnes` calls means that the data that's being clustered is in fact identical (after standardization) in both cases. So at least for `agnes` there's no worry about scaling, since it's the relative distances that matter, not the absolute distances.
 
 # Trying apcluster
 
@@ -102,6 +130,18 @@ If we tell `apcluster` that we want 3 clusters, it's quite happy to make them, t
 aggre_compact <- aggExCluster(x=ap_compact)
 plot(aggre_compact, compact_data[, 1:2], k=3)
 ```
+
+## apcluster on the scaled data
+
+If we apply `apcluster` to the `scaled_data` we again get essentially (likely exactly) the same results as we did on the `spread_data`:
+
+```{r}
+ap_scaled <- apcluster(negDistMat(r=2), scaled_data[, 1:2], details=TRUE)
+plot(ap_scaled, scaled_data[, 1:2])
+heatmap(ap_scaled)
+```
+
+I think that again, `apcluster` is focusing on the _relative_ distances between the points, so scaling the dataset doesn't really change anything.
 
 ## Tuning apcluster parameters
 
