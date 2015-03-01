@@ -12,3 +12,4 @@
 
 # Ignore all our data files so they don't get committed.
 data
+R_notebooks/*.html
