@@ -1,0 +1,166 @@
+---
+title: "Clustering exploration"
+author: "Nic McPhee"
+date: "February 28, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+# Introduction
+
+Tom Helmuth and I are trying to figure out the best way to try to automate the computation of clusters, and the _number_ of clusters in a bunch of GP data. Here I'm trying to work through some options and see if we can better understand the impact different algorithm and parameter choices.
+
+One worry Tom identified is that while lexicase will (hopefully) give us a significant number of identifiable clusters with some non-trivial distances between them, when using things like tournament selection the clusters are probably closer together. The concern is that the notions of distance may be relative, and the clustering algorithm will find just as many clusters with tournament selection, even though they're much closer together, i.e., the boundaries between the clusters aren't nearly as clear.
+
+My sense from going through this is that `apcluster` works nicely, and we just need to pick (and stick to) a sensible value of the `q` parameter. I think that if we apply `apcluster` to a few "real" data sets (unlike the synthetic sets here) we can identify a value of `q` that seems to give us reasonable numbers. Based on the results below, I'm thinking that we probably want a smaller value for `q` like the `q=0.1` used towards the end of this notebook.
+
+Before starting, we need to load some libraries:
+
+```{r, message=FALSE}
+library('ggplot2')
+library('cluster')
+library('apcluster')
+```
+
+# Some test data
+
+In an effort to get a handle on this, I generated some random data that will hopefully be structurally similar to the data we're hoping to find. The `spread_data` set has five fairly disparate clusters, while `compact_data` has three clusters that are much closer together. The hope then is that whatever clustering approach we use finds the five clusters in the first case, and finds three-ish clusters in the second case.
+
+```{r}
+group_size <- 30
+spread_data = data.frame(x = c(rnorm(group_size), rnorm(group_size,  0), 
+                               rnorm(group_size, 10), rnorm(group_size, 20), 
+                               rnorm(group_size, 20)), 
+                         y = c(rnorm(group_size), rnorm(group_size, 20), 
+                               rnorm(group_size, 10), rnorm(group_size, 20), 
+                               rnorm(group_size)))
+spread_data$kind = "Spread"
+compact_data = data.frame(x = c(rnorm(group_size, 11), rnorm(group_size, 14), 
+                                rnorm(group_size, 17)), 
+                          y = c(rnorm(group_size,  3), rnorm(group_size,  6), 
+                                rnorm(group_size,  3)))
+compact_data$kind = "Compact"
+
+all_data <- rbind(spread_data, compact_data)
+
+ggplot(all_data, aes(x=x, y=y, color=kind)) + geom_point()
+```
+
+Tom was also concerned that basic scaling might be a problem, and suggested that we take the `spread_data` and scale it by, say, 1/100, and see if we can still extract the original five clusters.
+
+```{r}
+scaled_data <- as.data.frame(scale(spread_data[, 1:2], center=FALSE, scale=c(100, 100)))
+scaled_data$kind = "Scaled"
+
+all_data <- rbind(all_data, scaled_data)
+ggplot(all_data, aes(x=x, y=y, color=kind)) + geom_point()
+```
+
+In this plot the `scaled_data` is just a little green dot, so let's just plot it on its own to confirm that it still has the original structure:
+```{r}
+ggplot(subset(all_data, kind=="Scaled"), aes(x=x, y=y, color=kind)) + geom_point()
+```
+
+# Trying Agnes clustering
+
+So first we'll try the `agnes` clustering algorithm.
+
+With the spread data the dendogram clearly splits the data into five nice, clean clusters, as we'd expect:
+
+```{r}
+agnes_spread <- agnes(spread_data[, 1:2], stand=TRUE)
+plot(agnes_spread, which.plots=2)
+```
+
+---
+
+With the compact data, the clustering is clearly much more noisy, and it's a lot less clear how many clusters we should say there are in that data set. In actuality the particular behavior depends a lot on the details of the particular random values in the compact data. Sometimes the data sets cluster very nicely into three clear clusters, where other times the clustering is much less clear.
+
+```{r}
+ag_compact <- agnes(compact_data[, 1:2], stand=TRUE)
+plot(ag_compact, which.plots=2)
+```
+
+---
+
+## Agnes works fine on the scaled data
+
+If we apply `agnes` to the heavily scaled data, we get essentially the same clustering:
+
+```{r}
+ag_scaled <- agnes(scaled_data[, 1:2], stand=TRUE)
+plot(ag_scaled, which.plots=2)
+```
+
+In fact, I'm pretty sure the use of `stand=TRUE` in the `agnes` calls means that the data that's being clustered is in fact identical (after standardization) in both cases. So at least for `agnes` there's no worry about scaling, since it's the relative distances that matter, not the absolute distances.
+
+# Trying apcluster
+
+## apcluster on the spread data
+
+Applying `apcluster` to the spread data also gives us a nice clean split into the five clusters:
+
+```{r}
+ap_spread <- apcluster(negDistMat(r=2), spread_data[, 1:2], details=TRUE)
+plot(ap_spread, spread_data[, 1:2])
+```
+
+---
+
+```{r}
+heatmap(ap_spread)
+```
+
+---
+
+## apcluster on the compact data
+
+If we apply `apcluster` to the compact data, then (depending on the particulars of the data), we get anywhere from 3 to 6 or 7 clusters, although the underlying three clusters are usually visible.
+
+```{r}
+ap_compact <- apcluster(negDistMat(r=2), compact_data[, 1:2], details=TRUE)
+plot(ap_compact, compact_data[, 1:2])
+heatmap(ap_compact)
+```
+
+If we tell `apcluster` that we want 3 clusters, it's quite happy to make them, typically reconstructing something every close to the original three clusters. (Sometimes there are outliers in one cluster that end up, quite reasonably, in an adjacent cluster.)
+
+```{r}
+aggre_compact <- aggExCluster(x=ap_compact)
+plot(aggre_compact, compact_data[, 1:2], k=3)
+```
+
+## apcluster on the scaled data
+
+If we apply `apcluster` to the `scaled_data` we again get essentially (likely exactly) the same results as we did on the `spread_data`:
+
+```{r}
+ap_scaled <- apcluster(negDistMat(r=2), scaled_data[, 1:2], details=TRUE)
+plot(ap_scaled, scaled_data[, 1:2])
+heatmap(ap_scaled)
+```
+
+I think that again, `apcluster` is focusing on the _relative_ distances between the points, so scaling the dataset doesn't really change anything.
+
+## Tuning apcluster parameters
+
+### Lowering the q parameter
+
+If we lower the `q` parameter (the quantile threshhold) to 0.1 (it defaults to median, 0.5) then we can pretty consistently get 3 clusters from apcluster.
+
+```{r}
+ap_compact_q01 <- apcluster(negDistMat(r=2), compact_data[, 1:2], q=0.1, details=TRUE)
+plot(ap_compact_q01, compact_data[, 1:2])
+heatmap(ap_compact_q01)
+```
+
+### Increasing the distance exponent
+
+Alternatively, if we increase the exponent on the distances from 2 to 4, then we pretty consistently get our three clusters back, sometimes four. If you compare the following heatmap to the previous heat map, though, increasing the exponent seems to wash out more of the distances than lowering `q` did.
+
+```{r}
+ap_compact_distExp4 <- apcluster(negDistMat(r=4), compact_data[, 1:2], details=TRUE)
+plot(ap_compact_distExp4, compact_data[, 1:2])
+heatmap(ap_compact_distExp4)
+```
