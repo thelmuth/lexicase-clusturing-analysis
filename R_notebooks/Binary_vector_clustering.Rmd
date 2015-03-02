@@ -1,0 +1,153 @@
+---
+title: "Exploring clustering of binary vectors"
+author: "Nic McPhee"
+date: "March 1, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+# Introduction
+
+Tom Helmuth and I are still trying to work out the best approach to do our clustering. [After working with some (x, y) points](http://rpubs.com/NicMcPhee/63527), we wanted to explore binary vectors since that will be more like our the data we're actually going to be working with.
+
+Again, we'll load some libraries:
+
+```{r, message=FALSE}
+library('ggplot2')
+library('cluster')
+library('apcluster')
+```
+
+# Creating some test data
+
+The `make_vector` function generates a sequence of random bits with the specified number of ones. `mutate_vector` takes a binary vector and a percentage of bits to flip and mutates that vector.
+
+```{r}
+sequence_length = 100
+
+make_vector <- function(percent_ones) 
+  replicate(sequence_length, ifelse(runif(1)[1]>percent_ones, 0, 1))
+
+flip <- function(b) (1-b)
+mutate_vector <- function (v, percent_flips)
+  sapply(v, function(b) ifelse(runif(1)[1]<percent_flips, flip(b), b))
+```
+
+Make a bunch of vectors that will be the center of clusters obtained by mutating these center vectors:
+
+ * `all_zeros`, `ten_percent_zeros`, and `all_ones` are as advertised
+ * `u`, `v`, `w`, and `p` are all different random vectors
+ * `q` and `r` are minor mutations of `p`, with an expected difference of 1 bit from `p`. (and thus roughly two bits from each other).
+ 
+ The vectors `p`, `q`, and `r` should all be quite close to each other, and so clusters formed around them should also be fairly close, although some of the underlying structure may be extractable if one clusters agressively. I'll refer to these as the "tight" group later on. 
+
+```{r}
+all_zeros = rep(0, sequence_length)
+ten_percent_zeros = make_vector(0.1)
+all_ones = rep(1, sequence_length)
+u = make_vector(0.5)
+v = make_vector(0.5)
+w = make_vector(0.5)
+p = make_vector(0.5)
+q = mutate_vector(p, 0.01)
+r = mutate_vector(p, 0.01)
+```
+
+Now generate a bunch of clusters:
+
+```{r}
+mostly_zeros <- t(replicate(20, mutate_vector(all_zeros, 0.02)))
+nearly_10_percent_zeros <- t(replicate(20, mutate_vector(ten_percent_zeros, 0.02)))
+mostly_ones <- t(replicate(20, mutate_vector(all_ones, 0.1)))
+near_u <- t(replicate(20, mutate_vector(u, 0.1)))
+near_v <- t(replicate(20, mutate_vector(v, 0.1)))
+near_w <- t(replicate(20, mutate_vector(w, 0.1)))
+near_p <- t(replicate(20, mutate_vector(p, 0.01)))
+near_q <- t(replicate(20, mutate_vector(q, 0.01)))
+near_r <- t(replicate(20, mutate_vector(r, 0.01)))
+all <- rbind(mostly_zeros, nearly_10_percent_zeros, mostly_ones, 
+             near_u, near_v, near_w, near_p, near_q, near_r)
+```
+
+# Running agnes and apcluster on all our data
+
+```{r}
+agnes_all <- agnes(all)
+plot(agnes_all, which.plots=2)
+```
+
+If we cut at height 5 we get usually get six clusters (but I have seen seven once):
+
+```{r}
+sum(agnes_all$height>5) + 1
+```
+
+These clusters are (roughly):
+
+ * `mostly_zeros` + `nearly_10_percent_zeros`
+ * `mostly_ones`
+ * `near_u`
+ * `near_v`
+ * `near_w`
+ * `near_p` + `near_q` + `near_r` (the "tight" group)
+
+Applying `apcluster` generates seven (sometimes eight) clusters, as apcluster (with the default settings) separates out `mostly_zeros` and `nearly_10_percent_zeros`, which `agnes` pulled together.
+
+```{r}
+ap_all <- apcluster(negDistMat(r=2), all, details=TRUE)
+length(ap_all)
+heatmap(ap_all)
+```
+
+# What if we cluster the "tight" group separately?
+
+In the clusterings above `near_p`, `near_q`, and `near_r` were clustered together, which is (I think) what we want. Now what if we cluster them on their own, as we would if they were, for example, the clusters coming from tournament selection?
+
+```{r}
+tight <- rbind(near_p, near_q, near_r)
+```
+
+If we apply `agnes` to just this group, there's definitely some grouping in the dendrogram, but maybe not as clear as we want for making this point? (I'll need to talk to Tom about this.)
+
+```{r}
+agnes_tight <- agnes(tight)
+plot(agnes_tight, which.plots=2)
+```
+
+That said, if we use the same height (5), we just get one cluster, which is good:
+```{r}
+sum(agnes_tight$height>5) + 1
+```
+
+Applying `apcluster` to this data gives us lots o' clusters, like what we get with `agnes` if we set the height limit to some lower value like 1 or 2.
+
+```{r}
+ap_tight <- apcluster(negDistMat(r=2), tight, details=TRUE)
+heatmap(ap_tight)
+length(ap_tight)
+sum(agnes_tight$height>2) + 1
+```
+
+If we extract the input preference value `p` from running `apcluster` on _all_ the data and use it as the input preference value when clustering the `tight` subset, then here again we usually only get one cluster (but I have seen two): 
+
+```{r}
+ap_all@p
+ap_tight_modified_p <- apcluster(negDistMat(r=2), tight, p=ap_all@p, details=TRUE)
+length(ap_tight_modified_p)
+```
+
+Note that setting the `q` parameter to 0 sometimes gives us multiple clusters; I've seen up to 3, although sometimes it just gives us 1. That does suggest that just setting `q` to 0 isn't going to work as a strategy.
+
+```{r}
+ap_tight_q0 <- apcluster(negDistMat(r=2), tight, q=0, details=TRUE)
+length(ap_tight_q0)
+```
+
+# Conclusion
+
+So we can clearly manipulate both `agnes` and `apcluster` to get the "right" answer for the `tight` group, i.e, to place them all in a single cluster.
+
+The question, then, is how understandable and explicable are the decisions that need to be made? While I was really keen to use `apcluster` at first, trying to find "correct' settings for either the `p` or `q` parameters, and then explain those, is gonna be a pain. It seems that using distance/height cutoffs in `agnes` will be a lot easier to explain, and easier to map across a variety of problems, etc.
+
+So I'm kinda thinking that `agnes` and height cutoffs are the way to go.
