@@ -152,9 +152,13 @@ The question, then, is how understandable and explicable are the decisions that 
 
 So I'm kinda thinking that `agnes` and height cutoffs are the way to go.
 
-# Tom's Additions
+---
 
-Let's try using Manhattan distance instead of Euclidean distance.
+# Using Manhattan distance instead of Euclidean
+
+## Manhattan distance with agnes
+
+Let's try using Manhattan distance instead of Euclidean distance when using `agnes`.
 
 ```{r}
 agnes_all_manh <- agnes(all, metric= "manhattan")
@@ -195,7 +199,7 @@ Of course, with real data 10% might be reasonable, or something like the 30% I u
 
 ## apcluster with Manhattan distances
 
-Let's try apcluster with Manhattan distances. (I think I did this right, though I'm not sure.)
+Let's try apcluster with Manhattan distances.
 
 ```{r}
 ap_all_manh <- apcluster(negDistMat(method="manhattan"), all, details=TRUE)
