@@ -1,7 +1,7 @@
 ---
 title: "Exploring clustering of binary vectors"
-author: "Nic McPhee"
-date: "March 1, 2015"
+author: "Nic McPhee and Tom Helmuth"
+date: "March 2, 2015"
 output: 
   html_document:
     toc: true
@@ -152,9 +152,13 @@ The question, then, is how understandable and explicable are the decisions that 
 
 So I'm kinda thinking that `agnes` and height cutoffs are the way to go.
 
-# Tom's Additions
+---
 
-Let's try using Manhattan distance instead of Euclidean distance.
+# Using Manhattan distance instead of Euclidean
+
+## Manhattan distance with agnes
+
+Let's try using Manhattan distance instead of Euclidean distance when using `agnes`.
 
 ```{r}
 agnes_all_manh <- agnes(all, metric= "manhattan")
@@ -195,10 +199,17 @@ Of course, with real data 10% might be reasonable, or something like the 30% I u
 
 ## apcluster with Manhattan distances
 
-Let's try apcluster with Manhattan distances. (I think I did this right, though I'm not sure.)
+Let's try apcluster with Manhattan distances.
 
 ```{r}
 ap_all_manh <- apcluster(negDistMat(method="manhattan"), all, details=TRUE)
 heatmap(ap_all_manh)
 length(ap_all_manh)
+```
+
+If we use Manhattan distances and `q=0` on the "tight" data, we still get three (sometimes two) clusters. I suspect that the fact that Manhattan distances tend to be larger than Euclidean means it will be that much harder to get apcluster to see the "tight" group as a single cluster.
+
+```{r}
+ap_tight_manh <- apcluster(negDistMat(method="manhattan"), tight, q=0, details=TRUE)
+length(ap_tight_manh)
 ```
