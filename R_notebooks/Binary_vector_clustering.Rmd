@@ -206,3 +206,10 @@ ap_all_manh <- apcluster(negDistMat(method="manhattan"), all, details=TRUE)
 heatmap(ap_all_manh)
 length(ap_all_manh)
 ```
+
+If we use Manhattan distances and `q=0` on the "tight" data, we still get three (sometimes two) clusters. I suspect that the fact that Manhattan distances tend to be larger than Euclidean means it will be that much harder to get apcluster to see the "tight" group as a single cluster.
+
+```{r}
+ap_tight_manh <- apcluster(negDistMat(method="manhattan"), tight, q=0, details=TRUE)
+length(ap_tight_manh)
+```
