@@ -1,7 +1,7 @@
 ---
 title: "Exploring clustering of binary vectors"
-author: "Nic McPhee"
-date: "March 1, 2015"
+author: "Nic McPhee and Tom Helmuth"
+date: "March 2, 2015"
 output: 
   html_document:
     toc: true
@@ -151,3 +151,65 @@ So we can clearly manipulate both `agnes` and `apcluster` to get the "right" ans
 The question, then, is how understandable and explicable are the decisions that need to be made? While I was really keen to use `apcluster` at first, trying to find "correct' settings for either the `p` or `q` parameters, and then explain those, is gonna be a pain. It seems that using distance/height cutoffs in `agnes` will be a lot easier to explain, and easier to map across a variety of problems, etc.
 
 So I'm kinda thinking that `agnes` and height cutoffs are the way to go.
+
+---
+
+# Using Manhattan distance instead of Euclidean
+
+## Manhattan distance with agnes
+
+Let's try using Manhattan distance instead of Euclidean distance when using `agnes`.
+
+```{r}
+agnes_all_manh <- agnes(all, metric= "manhattan")
+plot(agnes_all_manh, which.plots=2)
+```
+
+As expected, the heights are now much higher between clusters. For example, where Euclidean distances between `all_ones` and `all_zeros` will be
+
+```{r}
+dist(rbind(all_zeros, all_ones))
+```
+
+with Manhattan distances it will be
+
+```{r}
+dist(rbind(all_zeros, all_ones), method = "manhattan")
+```
+
+If we use a larger height, we still see a similar number of clusters (here's with `height = 30`:
+
+```{r}
+sum(agnes_all_manh$height>30) + 1
+```
+
+We threw around "10% of the test cases different" as being a potential cutoff for the clustering. For this data at least, that seems like it would be too fine-grained:
+
+```{r}
+sum(agnes_all_manh$height>10) + 1
+```
+
+I got 79 there, which is close to half the size of the dataset, which has the following number of points:
+
+```{r}
+dim(all)[1]
+```
+
+Of course, with real data 10% might be reasonable, or something like the 30% I used above might be better.
+
+## apcluster with Manhattan distances
+
+Let's try apcluster with Manhattan distances.
+
+```{r}
+ap_all_manh <- apcluster(negDistMat(method="manhattan"), all, details=TRUE)
+heatmap(ap_all_manh)
+length(ap_all_manh)
+```
+
+If we use Manhattan distances and `q=0` on the "tight" data, we still get three (sometimes two) clusters. I suspect that the fact that Manhattan distances tend to be larger than Euclidean means it will be that much harder to get apcluster to see the "tight" group as a single cluster.
+
+```{r}
+ap_tight_manh <- apcluster(negDistMat(method="manhattan"), tight, q=0, details=TRUE)
+length(ap_tight_manh)
+```

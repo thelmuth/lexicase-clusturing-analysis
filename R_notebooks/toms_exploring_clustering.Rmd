@@ -1,0 +1,76 @@
+---
+title: "Tom’s Exploring Clustering"
+author: "Tom Helmuth"
+date: "March 1, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+# Introduction
+
+Let's load some libraries
+
+```{r, message=FALSE}
+library('ggplot2')
+library('cluster')
+library('apcluster')
+```
+
+# Test Data
+
+Here's the spread_data from Nic's doc:
+
+```{r}
+group_size = 30
+spread_data = data.frame(x = c(rnorm(group_size), rnorm(group_size,  0), 
+                               rnorm(group_size, 10), rnorm(group_size, 20), 
+                               rnorm(group_size, 20)), 
+                         y = c(rnorm(group_size), rnorm(group_size, 20), 
+                               rnorm(group_size, 10), rnorm(group_size, 20), 
+                               rnorm(group_size)))
+spread_data$kind = "Spread"
+
+ggplot(spread_data, aes(x=x, y=y, color=kind)) + geom_point()
+```
+
+# Clusters At Distances
+
+Let's try to find the number of clusters at different heights in an agnes dendrogram.
+
+```{r}
+spread_agnes = agnes(spread_data[,1:2], stand=FALSE, method="average")
+sum(spread_agnes$height>10) + 1 #Number of clusters at least averaging 10 distance apart. Have to add 1 since this is counting the number of cluster splits above the specified height.
+
+plot(spread_agnes, which.plots=2)
+```
+
+If you use a different linkage, you'll get a different result.
+
+```{r}
+spread_agnes_single = agnes(spread_data[,1:2], stand=FALSE, method="single")
+sum(spread_agnes_single$height>10) + 1 #Number of clusters at least averaging 10 distance apart. Have to add 1 since this is counting the number of cluster splits above the specified height.
+
+plot(spread_agnes_single, which.plots=2)
+```
+
+# Compare to Scaled Data
+
+Let's add the scaled data, at 1/100 original distances.
+
+```{r}
+scaled_data <- as.data.frame(scale(spread_data[, 1:2], center=FALSE, scale=c(100, 100)))
+scaled_data$kind = "Scaled"
+
+all_data <- rbind(spread_data, scaled_data)
+ggplot(all_data, aes(x=x, y=y, color=kind)) + geom_point()
+```
+
+Now let's do the same clustering, showing that we get a different number of clusters since the heights will be much smaller.
+
+```{r}
+scaled_agnes = agnes(scaled_data[,1:2], stand=FALSE, method="average")
+sum(scaled_agnes$height>10) + 1 #Number of clusters at least averaging 10 distance apart. Have to add 1 since this is counting the number of cluster splits above the specified height.
+
+plot(scaled_agnes, which.plots=2)
+```
