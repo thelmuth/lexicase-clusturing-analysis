@@ -7,6 +7,12 @@ output:
     toc: true
 ---
 
+```{r, message=FALSE}
+library('ggplot2')
+library('cluster')
+library('apcluster')
+```
+
 # Import the data
 
 ```{r}
@@ -47,6 +53,8 @@ extract_clustering_data = function(data, gen){
 }
 
 elitize_generation_data = function(gen_data){
+  # Note: 0 means not elite, 1 means elite
+  
   result <- gen_data
   for (i in 1:length(gen_data)) {
     result[i] <- ifelse(gen_data[i] == min(gen_data[i]), 1, 0)
@@ -55,13 +63,18 @@ elitize_generation_data = function(gen_data){
   return(result)
 }
 
+pass_fail_generation_data = function(gen_data){
+  # Note: 0 means fail, 1 means pass
+  return(ifelse(gen_data == 0, 1, 0))
+}
+
 count_clusters = function(clustering_data, height) {
   agnes_results <- agnes(clustering_data, metric = "manhattan")
   num_clusters <- sum(agnes_results$height>height) + 1
   
   #plot(agnes_results, which.plots=2)
   
-  print(sprintf("  Number of clusters is: %i\n", num_clusters))
+  print(sprintf("  Number of clusters is: %i", num_clusters))
   
   return(num_clusters)
 }
@@ -83,12 +96,89 @@ Get the count of the number of clusters per generation. Took about 4 minutes for
 
 ```{r}
 # This is slow
-# cluster_count <- num_clusters_for_all_gens(errors1, 20, elitize_generation_data)
+# cluster_count1 <- num_clusters_for_all_gens(errors1, 20, elitize_generation_data)
 
 # The result is the same as this, for errors1, height 20
-cluster_count = c(5,7,11,11,11,13,15,15,27,29,42,41,40,49,46,33,28,31,34,31,27,30,31,31,27,23,20,27,24,29,20,21,26,23,23,22,23,21,20,29,23,21,17,20,25,23,24,23,27,24,16,27,22,25,19,22,28,20,23,22,22,22,23,20,23,27,25,25,23,26,19,28,24,23,29,24,22,25,21,21,18,21,20,23,21,20,23,22,24,28,34,28,27,25,29,26,26,20,23,25,28,25,30,26,23,26,34,29,25,21,29,29,25,30,31,22,39,34,33,35,30,27,23,18,29,27,24,26,22,17)
+cluster_count1 = c(5,7,11,11,11,13,15,15,27,29,42,41,40,49,46,33,28,31,34,31,27,30,31,31,27,23,20,27,24,29,20,21,26,23,23,22,23,21,20,29,23,21,17,20,25,23,24,23,27,24,16,27,22,25,19,22,28,20,23,22,22,22,23,20,23,27,25,25,23,26,19,28,24,23,29,24,22,25,21,21,18,21,20,23,21,20,23,22,24,28,34,28,27,25,29,26,26,20,23,25,28,25,30,26,23,26,34,29,25,21,29,29,25,30,31,22,39,34,33,35,30,27,23,18,29,27,24,26,22,17)
 
-plot(cluster_count)
+plot(cluster_count1)
 ```
 
+# Import data6
 
+Let's do the same as above, but for data6
+
+```{r}
+# setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis")
+# 
+# data6 <- read.csv("data/RSWN/lexicase/data6.csv")
+# 
+# columns_to_drop = c("uuid", "parent.uuids", "genetic.operators", "push.program.size", "plush.genome.size", "push.program", "plush.genome", "total.error")
+# 
+# data6 = data6[,!(names(data6) %in% columns_to_drop)]
+# 
+# write.csv(data6, "data/RSWN/lexicase/errors6.csv", row.names = FALSE)
+```
+
+Now, read errors data.
+
+```{r}
+#errors6 <- read.csv("data/RSWN/lexicase/errors6.csv")
+```
+
+And get the clusters info:
+
+```{r}
+data6_clustering = c()
+
+# data6_clustering$count_at_height20 <- num_clusters_for_all_gens(errors6, 20, elitize_generation_data)
+# paste(data6_clustering$count_at_height20, collapse = ',')
+
+data6_clustering$count_at_height20 = c(7,8,6,8,11,20,28,32,30,53,73,93,92,98,102,108,113,119,107,106,119,114,115,130,122,127,132,133,135,132,159,140,148,148,139,140,145,145,135,159,148,124,118,106,72,62,53,60,47,56,57,47,46,57,61,57,59,54,58,51,52,50,58,57,58,64,58,51,59,65,60,60,61,70,67,60,56,47,64,66,61,69,92,88,62,69,83,60)
+
+plot(data6_clustering$count_at_height20)
+```
+
+Let's try looking at the dendrograms of data6 at different generations:
+
+```{r}
+# plot(agnes(elitize_generation_data(extract_clustering_data(errors6, 40)), metric = "manhattan"), which.plots=2)
+# 
+# plot(agnes(elitize_generation_data(extract_clustering_data(errors6, 50)), metric = "manhattan"), which.plots=2)
+```
+
+These make me think that trying the cluster graph with `height = 40` might prove interesting.
+
+```{r}
+#data6_clustering$count_at_height40 <- num_clusters_for_all_gens(errors6, 40, elitize_generation_data)
+#paste(data6_clustering$count_at_height40, collapse = ',')
+
+data6_clustering$count_at_height40 = c(2,2,2,2,2,4,5,6,3,4,9,9,13,16,11,14,15,14,13,10,10,7,8,12,8,13,13,12,11,11,9,9,9,12,13,11,13,11,14,18,19,17,20,22,18,12,8,15,8,10,11,10,10,9,10,10,10,8,8,7,9,6,11,12,13,11,9,7,12,11,11,9,10,13,10,11,9,8,15,15,10,10,21,18,15,14,22,22)
+
+plot(data6_clustering$count_at_height40)
+```
+
+Huh, smaller, but not as interesting!
+
+# Different Binarization: Pass/Fail
+
+Let's now try the same thing, except use pass/fail instead of elite/not-elite.
+
+```{r}
+data6_clustering_pf = c()
+
+#data6_clustering_pf$count_at_height20 <- num_clusters_for_all_gens(errors6, 20, pass_fail_generation_data)
+#paste(data6_clustering_pf$count_at_height20, collapse = ',')
+
+data6_clustering_pf$count_at_height20 = c(3,5,5,6,9,12,13,15,23,40,53,65,72,71,76,88,78,91,81,80,91,95,98,109,105,106,108,105,113,108,130,121,124,121,110,116,120,127,117,135,120,101,95,84,50,44,37,41,31,41,42,36,36,44,47,47,46,43,47,43,45,42,37,43,54,61,54,41,55,63,61,55,59,67,64,58,55,44,61,65,59,59,85,78,62,69,83,60)
+
+plot(data6_clustering_pf$count_at_height20)
+```
+
+Even though it's above, here's the elite/not-elite graph again for easy comparison:
+
+```{r}
+plot(data6_clustering$count_at_height20)
+```
+
+While the differences aren't major, I'm surprised to see that there are differences throughout the run, not just at the start. This means that late in run there are test cases that no individual gets perfect. Also, while this might indicate we could just go with pass/fail for its simplicity, this might not hold for other runs/problems, especially problems where it's very difficult to get the right output (such as a complicated string). I would recommend sticking with eliteness.
