@@ -23,6 +23,8 @@ library('apcluster')
 
 # Demonstration of Agglomerative Clustering
 
+## Data
+
 First, we're going to make some 2-dimensional data to give an example about how agglomerative clustering (`agnes` in R) works. Here's data clustered around 5 points, with 30 points per cluster:
 
 ```{r}
@@ -38,6 +40,8 @@ spread_data$kind = "Spread"
 ggplot(spread_data, aes(x=x, y=y, color=kind)) + geom_point()
 ```
 
+## agnes (agglomerative clustering)
+
 `agnes` is a clustering algorithm that starts with each point in it's own "cluster". It then finds the two clusters that are closest together, and joins them into a new cluster. This algorithm is iterated until every point is in the same cluster. You'll note that this means it has to be able to tell how far apart 2 clusters of points are; there are multiple ways of doing this, but we're using the method where you take the average distance between every pair of points in the two clusters and use that as the distance between the clusters.
 
 `agnes` results in a dendrogram, which is a graph that shows the heights (distances) at which clusters were merged. For this demonstration we're using Euclidean distance. So, looking at the plot above, we would expect the initial joining of points within each cluster to happen at small scales with distances around 0-3, and then the 5 clusters we see to be merged at larger distances around 5-30. So, here is the dendrogram we get from running `agnes`:
@@ -48,7 +52,11 @@ spread_agnes = agnes(spread_data[,1:2], stand=FALSE, method="average", metric="e
 plot(spread_agnes, which.plots=2)
 ```
 
-As expected, the within-cluster joins happen at small distances, with the larger clusters being joined at distances around 5-30. The large gap in joins between about height 3 and height 6 shows that the data roughly falls into 5 clusters, though if you want your clusters to be further apart, you could say that there are 4, 3, or 2 clusters. We can get this number by counting the number of splits in the dendrogram above a specific height, and adding 1 since one split makes two clusters. Let's show this for height 5:
+As expected, the within-cluster joins happen at small distances, with the larger clusters being joined at distances around 5-30. The large gap in joins between about height 3 and height 6 shows that the data roughly falls into 5 clusters, though if you want your clusters to be further apart, you could say that there are 4, 3, or 2 clusters.
+
+## Number of Clusters
+
+We can get this number by counting the number of splits in the dendrogram above a specific height, and adding 1 since one split makes two clusters. Let's show this for height 5:
 
 ```{r}
 sum(spread_agnes$height>5) + 1 #Number of clusters at least averaging 10 distance apart. Have to add 1 since this is counting the number of cluster splits above the specified height.
@@ -76,8 +84,45 @@ Since we're using binary elite/not-elite data, there are some considerations to 
 
 So far, we've looked at results on 2 runs of the RSWN problem that ended in successful programs. In the following plots, we will have generations on the x-axis and the number of clusters at least 20 test cases apart on the y-axis.
 
-Here is the plot from run6:
+### Results from Run 6
 
+Here is the plot from Run 6:
 
+```{r}
+data6_clustering = c()
 
+data6_clustering$count_at_height20 = c(7,8,6,8,11,20,28,32,30,53,73,93,92,98,102,108,113,119,107,106,119,114,115,130,122,127,132,133,135,132,159,140,148,148,139,140,145,145,135,159,148,124,118,106,72,62,53,60,47,56,57,47,46,57,61,57,59,54,58,51,52,50,58,57,58,64,58,51,59,65,60,60,61,70,67,60,56,47,64,66,61,69,92,88,62,69,83,60)
 
+plot(data6_clustering$count_at_height20)
+```
+
+This data shows an interesting shape! Very early there are few clusters when most individuals are bad at most cases. Then, many clusters quickly form, likely as a result of small groups of individuals getting better at small numbers of test cases. Around generation 42, it appears that something major happened; this could possibly be an event where programs combined solve a larger number of test cases, and having its children take over a large part of the population. The rest of the run stays mostly stable until a solution is foudn in generation 89.
+
+We could also look at a different distance between clusters, such as height 40:
+
+```{r}
+data6_clustering$count_at_height40 = c(2,2,2,2,2,4,5,6,3,4,9,9,13,16,11,14,15,14,13,10,10,7,8,12,8,13,13,12,11,11,9,9,9,12,13,11,13,11,14,18,19,17,20,22,18,12,8,15,8,10,11,10,10,9,10,10,10,8,8,7,9,6,11,12,13,11,9,7,12,11,11,9,10,13,10,11,9,8,15,15,10,10,21,18,15,14,22,22)
+
+plot(data6_clustering$count_at_height40)
+```
+
+This version doesn't tell as good of a story. This might be because we're looking for further apart clusters (at least 40 test cases different), which may make clusters include individuals that are too different.
+
+### Results from Run 1
+
+Here is the plot from the other run, going back to height 20:
+
+```{r}
+# The result is the same as this, for errors1, height 20
+cluster_count1 = c(5,7,11,11,11,13,15,15,27,29,42,41,40,49,46,33,28,31,34,31,27,30,31,31,27,23,20,27,24,29,20,21,26,23,23,22,23,21,20,29,23,21,17,20,25,23,24,23,27,24,16,27,22,25,19,22,28,20,23,22,22,22,23,20,23,27,25,25,23,26,19,28,24,23,29,24,22,25,21,21,18,21,20,23,21,20,23,22,24,28,34,28,27,25,29,26,26,20,23,25,28,25,30,26,23,26,34,29,25,21,29,29,25,30,31,22,39,34,33,35,30,27,23,18,29,27,24,26,22,17)
+
+plot(cluster_count1)
+```
+
+This plot doesn't tell as good of a story. There is a peak around generation 18, but then clusters oscilate around 25 for the remainder of the run.
+
+# Conclusions and future work
+
+It looks like this method of clustering will work well for our needs. We've also explored using `apcluster` and `x-means` clustering, both of which seem not quite right. The main reason for this is that they ignore scale, so that unlike with `agnes` where we can look for clusters at a specific height, they might find similar numbers of clusters even when the data looks much more tightly bound on an absolute scale.
+
+So far, we've only looked at a limited set of runs that succeeded with lexicase on RSWN. We also want to look at other selection methods (tournament and IFS). If, for example, tournament selection sticks around 10 clusters for the entire run, then the last graph for Run 1 would be much more interesting in comparison, as it has many more clusters even though they're relatively stable. We also need to look at failed runs to see how they differ. I think it will be useful to plot data from a large number of runs, getting a better feel for trends than individual runs. Finally, we also need to look at other problems.
