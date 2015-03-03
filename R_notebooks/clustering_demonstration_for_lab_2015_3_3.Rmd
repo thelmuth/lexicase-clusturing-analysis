@@ -1,0 +1,83 @@
+---
+title: "Clustering Demonstration for Lab"
+author: "Tom Helmuth"
+date: "March 3, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+# Introduction
+
+This page will give a brief overview of the work Nic and I have been doing to explore the use of clustering algorithms on error data. Much of the work here is borrowed from Nic.
+
+This document was made in R Studio using the R Markdown language. This is cool because it allows me to show you the results of the R code while also nicely formatting it for the internet.
+
+First, I need to import some libraries.
+
+```{r, message=FALSE}
+library('ggplot2')
+library('cluster')
+library('apcluster')
+```
+
+# Demonstration of Agglomerative Clustering
+
+First, we're going to make some 2-dimensional data to give an example about how agglomerative clustering (`agnes` in R) works. Here's data clustered around 5 points, with 30 points per cluster:
+
+```{r}
+group_size = 30
+spread_data = data.frame(x = c(rnorm(group_size, 0), rnorm(group_size,  5), 
+                               rnorm(group_size, 10), rnorm(group_size, 30), 
+                               rnorm(group_size, 11)), 
+                         y = c(rnorm(group_size), rnorm(group_size, 20), 
+                               rnorm(group_size, 15), rnorm(group_size, 25), 
+                               rnorm(group_size, -3)))
+spread_data$kind = "Spread"
+
+ggplot(spread_data, aes(x=x, y=y, color=kind)) + geom_point()
+```
+
+`agnes` is a clustering algorithm that starts with each point in it's own "cluster". It then finds the two clusters that are closest together, and joins them into a new cluster. This algorithm is iterated until every point is in the same cluster. You'll note that this means it has to be able to tell how far apart 2 clusters of points are; there are multiple ways of doing this, but we're using the method where you take the average distance between every pair of points in the two clusters and use that as the distance between the clusters.
+
+`agnes` results in a dendrogram, which is a graph that shows the heights (distances) at which clusters were merged. For this demonstration we're using Euclidean distance. So, looking at the plot above, we would expect the initial joining of points within each cluster to happen at small scales with distances around 0-3, and then the 5 clusters we see to be merged at larger distances around 5-30. So, here is the dendrogram we get from running `agnes`:
+
+```{r}
+spread_agnes = agnes(spread_data[,1:2], stand=FALSE, method="average", metric="euclidian")
+
+plot(spread_agnes, which.plots=2)
+```
+
+As expected, the within-cluster joins happen at small distances, with the larger clusters being joined at distances around 5-30. The large gap in joins between about height 3 and height 6 shows that the data roughly falls into 5 clusters, though if you want your clusters to be further apart, you could say that there are 4, 3, or 2 clusters. We can get this number by counting the number of splits in the dendrogram above a specific height, and adding 1 since one split makes two clusters. Let's show this for height 5:
+
+```{r}
+sum(spread_agnes$height>5) + 1 #Number of clusters at least averaging 10 distance apart. Have to add 1 since this is counting the number of cluster splits above the specified height.
+```
+
+And also for height 15, which might be better if you think that data at least 15 distance apart make a stronger case for your particular application:
+
+```{r}
+sum(spread_agnes$height>15) + 1 #Number of clusters at least averaging 10 distance apart. Have to add 1 since this is counting the number of cluster splits above the specified height.
+```
+
+This shows that you can get different numbers of clusters from `agnes` depending on how far apart you want the clusters to be. This could actually be a boon for our data, which I will explain in the next section.
+
+# Clustering for Test Case Data
+
+Ok, now let's talk about how we can use `agnes` to plot the number of clusters (at a particular height) in our population. Here, we're going to cluster the individuals in the population based on their errors on the test cases. For the software synthesis problems I'm interested in, and for lexicase in general, we're mainly interested in whether each individual passes or fails on each test case. But, in early generations there may be some test cases that every individual fails at. Because of this, I'm going to slightly tweak pass/fail, and instead use elite/not-elite per test case (per generation). So, if an individual has the best error value on a test case in a particular generation, it will get a 1 for that case, and otherwise it will get a 0 for that case.
+
+Unfortunately, loading the megabytes of data from a run is prohibatively slow with this web interface, so I will instead just show you results from some offline runs instead of doing the calculations in-document.
+
+## Considerations With Binary Data
+
+Since we're using binary elite/not-elite data, there are some considerations to make. The first is that we will use Manhattan distance rather than Euclidean distance when calculating the difference between two error vectors. This has the nice property that if two error vectors differ on `X` test cases, then the distance between the vectors will be `X`. This means that we can choose a height to count clusters at on the dendrogram that makes sense with respect to the number of test cases. For the results below, we've chosen to see how many clusters are at least distance 20 apart, chosen because it there are 200 test cases for the problem, so two individuals have to be different on at least 10% of the test cases in order to land in a differnet cluster.
+
+## Results on Replace Space With Newline (RSWN) problem
+
+So far, we've looked at results on 2 runs of the RSWN problem that ended in successful programs. In the following plots, we will have generations on the x-axis and the number of clusters at least 20 test cases apart on the y-axis.
+
+Here is the plot from run6:
+
+
+
+
