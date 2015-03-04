@@ -1,0 +1,85 @@
+---
+title: "Clustering Examples (RSWN)"
+author: "Tom Helmuth"
+date: "March 3, 2015"
+  html_document:
+    toc: true
+---
+
+# Introduction: Replace Space With Newline problem
+
+This document will make clustering plots for data from a range of settings and results.
+
+## Setup code
+
+```{r, message=FALSE}
+library('ggplot2')
+library('cluster')
+library('apcluster')
+
+setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis")
+```
+
+These functions allow you to retrieve the number of clusters per generation:
+
+```{r}
+# Takes error data (including generation and location columns) and a generation, and returns test case error data from the given generation
+extract_clustering_data = function(data, gen){
+  
+  print(sprintf("Generation %i", gen))
+  
+  this_gen_data = subset(data, generation == gen)
+  
+  columns_to_drop = c("generation", "location")
+  right_rows = this_gen_data[,!(names(this_gen_data) %in% columns_to_drop)]
+  
+  return(right_rows)
+}
+
+# Takes a generation of error data, and converts it to 1 for eliteness on that test case and 0 for not-eliteness
+elitize_generation_data = function(gen_data){
+  # Note: 0 means not elite, 1 means elite
+  
+  result <- gen_data
+  for (i in 1:length(gen_data)) {
+    result[i] <- ifelse(gen_data[i] == min(gen_data[i]), 1, 0)
+    }
+  
+  return(result)
+}
+
+# Takes a generation of error data, and converts it to 1 for passing that test case and 0 for failing
+pass_fail_generation_data = function(gen_data){
+  # Note: 0 means fail, 1 means pass
+  return(ifelse(gen_data == 0, 1, 0))
+}
+
+# For a generation of binary data, uses agnes to cluster the data and then find the number of clusters that are at least `height` apart.
+count_clusters = function(clustering_data, height) {
+  agnes_results <- agnes(clustering_data, metric = "manhattan")
+  num_clusters <- sum(agnes_results$height>height) + 1
+  
+  #plot(agnes_results, which.plots=2)
+  
+  print(sprintf("  Number of clusters is: %i", num_clusters))
+  
+  return(num_clusters)
+}
+
+# Takes a dataset consisting of individuals, generations, and test case errors, as well as a height cutoff for clustering and a normalization function, and returns a vector of numbers of clusters at each generation.
+num_clusters_for_all_gens = function(data, height, normalization_fn){
+  num_gens = max(data$generation)
+  num_clusters <- sapply(seq(0, num_gens),
+                         function(gen){
+                           count_clusters(normalization_fn(extract_clustering_data(data, gen)),
+                                          height)
+                           }
+                         )
+  
+  return(num_clusters)
+}
+```
+
+# Lexicase, Success
+
+
