@@ -1,0 +1,93 @@
+---
+title: "Combining cluster counts for plotting with ggplot"
+author: "Nic McPhee"
+date: "3 March 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+# Introduction
+
+To plot the cluster cluster counts in cool ways with `ggplot` I think we're going to want the data to be in "long" form in a shared data frame. That will let us do things like color and group and facet based on lots of different features.
+
+# The data in list form
+
+Currently the cluster counts come back as lists, like below:
+
+```{r}
+cluster_count1 = c(5,7,11,11,11,13,15,15,27,29,42,41,40,49,46,33,28,31,34,31,27,30,31,31,27,23,20,27,24,29,20,21,26,23,23,22,23,21,20,29,23,21,17,20,25,23,24,23,27,24,16,27,22,25,19,22,28,20,23,22,22,22,23,20,23,27,25,25,23,26,19,28,24,23,29,24,22,25,21,21,18,21,20,23,21,20,23,22,24,28,34,28,27,25,29,26,26,20,23,25,28,25,30,26,23,26,34,29,25,21,29,29,25,30,31,22,39,34,33,35,30,27,23,18,29,27,24,26,22,17)
+
+data6_clustering = c()
+
+data6_clustering$count_at_height20 = c(7,8,6,8,11,20,28,32,30,53,73,93,92,98,102,108,113,119,107,106,119,114,115,130,122,127,132,133,135,132,159,140,148,148,139,140,145,145,135,159,148,124,118,106,72,62,53,60,47,56,57,47,46,57,61,57,59,54,58,51,52,50,58,57,58,64,58,51,59,65,60,60,61,70,67,60,56,47,64,66,61,69,92,88,62,69,83,60)
+
+data6_clustering$count_at_height40 = c(2,2,2,2,2,4,5,6,3,4,9,9,13,16,11,14,15,14,13,10,10,7,8,12,8,13,13,12,11,11,9,9,9,12,13,11,13,11,14,18,19,17,20,22,18,12,8,15,8,10,11,10,10,9,10,10,10,8,8,7,9,6,11,12,13,11,9,7,12,11,11,9,10,13,10,11,9,8,15,15,10,10,21,18,15,14,22,22)
+```
+
+# Converting to data frames
+
+The following function converts one of the above lists into a `data.frame`. It also adds a number of pieces of datat that may help us with the grouping later:
+
+ * The run number
+ * A string descriptor of the problem (e.g., "RSWN")
+ * A string descriptor of the treatment (e.g., "lexicase"), 
+ * A boolean indicating whether that run succeeded (got 0 error on the training data)
+ * The height used to count the number of clusters
+
+**Tom: Are there other fields that you think we should be including?**
+
+```{r}
+make_frame_from_counts <- function (run_number, problem, treatment, 
+                                    succeeded, height, counts) {
+  num_gens = length(counts)
+  result = data.frame(run.num = rep(run_number, num_gens), 
+                      problem = rep(problem, num_gens),
+                      treatment = rep(treatment, num_gens),
+                      succeeded = rep(succeeded, num_gens),
+                      height = rep(height, num_gens),
+                      generation = seq(0, num_gens-1), 
+                      cluster.count = counts)
+  return(result)
+}
+```
+
+# Plotting the resulting data frame
+
+Now that we can convert the data into `data.frame`s, we can use `ggplot` to make some nice plots.
+
+```{r}
+library("ggplot2")
+
+d1_h20 <- make_frame_from_counts(1, "RSWN", "lexicase", TRUE, 20, cluster_count1)
+
+ggplot(d1_h20, aes(x=generation, y=cluster.count)) + geom_line()
+
+d6_h20 <- make_frame_from_counts(6, "RSWN", "lexicase", TRUE, 20, 
+                                 data6_clustering$count_at_height20)
+
+ggplot(d6_h20, aes(x=generation, y=cluster.count)) + geom_line()
+
+d6_h40 <- make_frame_from_counts(6, "RSWN", "lexicase", TRUE, 40, 
+                                 data6_clustering$count_at_height40)
+
+ggplot(d6_h40, aes(x=generation, y=cluster.count)) + geom_line()
+```
+
+# Pulling it all together
+
+Now that everything is in nice `data.frame`s we can `rbind` them all together into a single big frame and plot them in interesting ways.
+
+```{r}
+all <- rbind(d1_h20, d6_h20, d6_h40)
+
+ggplot(all, aes(x=generation, y=cluster.count, 
+                group=interaction(run.num, height), 
+                color=interaction(run.num, factor(height)))) + 
+  geom_line() +
+  labs(color = "Run . Height")
+```
+
+This combined plot makes it much easier to compare the cluster counts from different runs. We can see the relative heights of the cluster counts, for example, and when different runs end.
+
+It will be interesting when we have these counts from hundreds of runs from different problems, selection mechanisms, and the the like.
