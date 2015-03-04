@@ -11,96 +11,33 @@ output:
 library('ggplot2')
 library('cluster')
 library('apcluster')
+
+setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis")
+source('scripts/clustering.R')
 ```
 
 # Import the data
 
+This is run once to transform the data file into an errors-only file.
+
 ```{r}
-# setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis")
-# 
-# data1 <- read.csv("data/RSWN/lexicase/data1.csv")
-# 
-# columns_to_drop = c(parent.uuids", "genetic.operators", "push.program.size", "plush.genome.size", "push.program", "plush.genome", "total.error")
-# 
-# data1 = data1[,!(names(data1) %in% columns_to_drop)]
-# 
-#write.csv(data1, "data/RSWN/lexicase/errors1.csv", row.names = FALSE)
+# transform_data_file_into_error_file("data/RSWN/lexicase/data1.csv")
 ```
 
 Now, read errors data.
 
 ```{r}
-#errors1 <- read.csv("data/RSWN/lexicase/errors1.csv")
+errors1 <- read.csv("data/RSWN/lexicase/errors_data1.csv")
 ```
 
 
 # Calculate the number of clusters in a generation
 
-Make some helper functions.
-
-```{r}
-# Takes error data (including generation and location columns) and a generation, and returns test case error data from the given generation
-extract_clustering_data = function(data, gen){
-  
-  print(sprintf("Generation %i", gen))
-  
-  this_gen_data = subset(data, generation == gen)
-  
-  columns_to_drop = c("generation", "location", "uuid")
-  right_cols = this_gen_data[,!(names(this_gen_data) %in% columns_to_drop)]
-  
-  return(right_cols)
-}
-
-# Takes a generation of error data, and converts it to 1 for eliteness on that test case and 0 for not-eliteness
-elitize_generation_data = function(gen_data){
-  # Note: 0 means not elite, 1 means elite
-  
-  result <- gen_data
-  for (i in 1:length(gen_data)) {
-    result[i] <- ifelse(gen_data[i] == min(gen_data[i]), 1, 0)
-    }
-  
-  return(result)
-}
-
-# Takes a generation of error data, and converts it to 1 for passing that test case and 0 for failing
-pass_fail_generation_data = function(gen_data){
-  # Note: 0 means fail, 1 means pass
-  return(ifelse(gen_data == 0, 1, 0))
-}
-
-# For a generation of binary data, uses agnes to cluster the data and then find the number of clusters that are at least `height` apart.
-count_clusters = function(clustering_data, height) {
-  agnes_results <- agnes(clustering_data, metric = "manhattan")
-  num_clusters <- sum(agnes_results$height>height) + 1
-  
-  #plot(agnes_results, which.plots=2)
-  
-  print(sprintf("  Number of clusters is: %i", num_clusters))
-  
-  return(num_clusters)
-}
-
-# Takes a dataset consisting of individuals, generations, and test case errors, as well as a height cutoff for clustering and a normalization function, and returns a vector of numbers of clusters at each generation.
-num_clusters_for_all_gens = function(data, height, normalization_fn){
-  num_gens = max(data$generation)
-  num_clusters <- sapply(seq(0, num_gens),
-                         function(gen){
-                           count_clusters(normalization_fn(extract_clustering_data(data, gen)),
-                                          height)
-                           }
-                         )
-  
-  return(num_clusters)
-}
-```
-
 Get the count of the number of clusters per generation. Took about 4 minutes for this dataset with 129 generations.
 
 ```{r}
 # This is slow
-# cluster_count1 <- num_clusters_for_all_gens(errors1, 20, elitize_generation_data)
+cluster_count1 <- num_clusters_for_all_gens(errors1, 20, elitize_generation_data)
 
 # The result is the same as this, for errors1, height 20
 cluster_count1 = c(5,7,11,11,11,13,15,15,27,29,42,41,40,49,46,33,28,31,34,31,27,30,31,31,27,23,20,27,24,29,20,21,26,23,23,22,23,21,20,29,23,21,17,20,25,23,24,23,27,24,16,27,22,25,19,22,28,20,23,22,22,22,23,20,23,27,25,25,23,26,19,28,24,23,29,24,22,25,21,21,18,21,20,23,21,20,23,22,24,28,34,28,27,25,29,26,26,20,23,25,28,25,30,26,23,26,34,29,25,21,29,29,25,30,31,22,39,34,33,35,30,27,23,18,29,27,24,26,22,17)
@@ -113,21 +50,13 @@ plot(cluster_count1)
 Let's do the same as above, but for data6
 
 ```{r}
-# setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis")
-# 
-# data6 <- read.csv("data/RSWN/lexicase/data6.csv")
-# 
-# columns_to_drop = c("parent.uuids", "genetic.operators", "push.program.size", "plush.genome.size", "push.program", "plush.genome", "total.error")
-# 
-# data6 = data6[,!(names(data6) %in% columns_to_drop)]
-# 
-# write.csv(data6, "data/RSWN/lexicase/errors6.csv", row.names = FALSE)
+transform_data_file_into_error_file("data/RSWN/lexicase/data6.csv")
 ```
 
 Now, read errors data.
 
 ```{r}
-#errors6 <- read.csv("data/RSWN/lexicase/errors6.csv")
+errors6 <- read.csv("data/RSWN/lexicase/errors_data6.csv")
 ```
 
 And get the clusters info:
@@ -191,23 +120,6 @@ While the differences aren't major, I'm surprised to see that there are differen
 
 Now, let's look at the error diversity of a run, which is the percent of distinct error vectors in the population each generation. Here are functions to find error diversity.
 
-```{r}
-# Takes a generation of error vectors and finds the percent of distinct error vectors
-generation_error_diversity = function(gen_data){
-  return(nrow(unique(gen_data)) / nrow(gen_data))
-}
-
-error_diversity = function(data){
-  num_gens = max(data$generation)
-  error_divs <- sapply(seq(0, num_gens),
-                         function(gen){
-                           generation_error_diversity(extract_clustering_data(data, gen))
-                           }
-                         )
-  
-  return(error_divs)
-}
-```
 
 Let's find error diversity for data6:
 
@@ -221,3 +133,7 @@ plot(error6_div)
 ```
 
 Ooooh, very interesting! The first half looks very similar to the clustering, where the second half does not!
+
+```{r}
+data_frame6 = make_frame_from_errors_file("data/RSWN/lexicase/errors6.csv", 6, "replace-space-with-newline", "lexicase", 20, elitize_generation_data)
+```
