@@ -13,8 +13,8 @@ rename_test_case_columns <- function(data) {
   
   new_evens = seq(0, mid)
   new_odds = seq(floor(mid + 0.5), max_column-first_test_case_index)
-  colnames(data)[seq(5, ncol(data), 2)] <- new_evens
-  colnames(data)[seq(6, ncol(data), 2)] <- new_odds
+  colnames(data)[seq(first_test_case_index, max_column, 2)] <- new_evens
+  colnames(data)[seq(first_test_case_index+1, max_column, 2)] <- new_odds
 
   return(data)
 }
