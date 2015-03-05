@@ -15,7 +15,7 @@ selection = "lexicase"
 output_directory = "/home/thelmuth/Results/clustering-bench/" + namespace + "/zips/"
 r_directory = "/home/thelmuth/lexicase-clusturing-analysis/fly_scripts/"
 
-title_string = "gzip the CSVs | " + namespace + " | "
+title_string = "Find Numbers of Clusters | " + namespace + " | "
 
 # Make selection experiments easier
 if selection == "lexicase":
