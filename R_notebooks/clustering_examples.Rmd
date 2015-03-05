@@ -206,4 +206,3 @@ ggplot(tourney_failure, aes(x=generation)) +
   labs(y="Error Diversity", color="") +
   coord_cartesian(ylim=c(0,1))
 ```
-
