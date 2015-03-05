@@ -75,7 +75,9 @@ num_clusters_for_all_gens = function(data, height, normalization_fn){
 
 # Takes a generation of error vectors and finds the percent of distinct error vectors
 generation_error_diversity = function(gen_data){
-  return(nrow(unique(gen_data)) / nrow(gen_data))
+  result = nrow(unique(gen_data)) / nrow(gen_data)
+  print(sprintf("  Error Diversity is: %f", result))
+  return(result)
 }
 
 error_diversity = function(data){

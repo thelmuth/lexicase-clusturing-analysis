@@ -2,6 +2,7 @@
 title: "Clustering Examples (RSWN)"
 author: "Tom Helmuth"
 date: "March 3, 2015"
+output: 
   html_document:
     toc: true
 ---
@@ -17,69 +18,94 @@ library('ggplot2')
 library('cluster')
 library('apcluster')
 
-setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis")
+setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis/R_notebooks")
+
+source('../scripts/clustering.R')
 ```
 
-These functions allow you to retrieve the number of clusters per generation:
+## Run These Once To Get Data Into CSVs
 
+These transform the original data files into error files, and transform the error data into data frames we can use.
+
+Lexicase, Run 1, a success
 ```{r}
-# Takes error data (including generation and location columns) and a generation, and returns test case error data from the given generation
-extract_clustering_data = function(data, gen){
-  
-  print(sprintf("Generation %i", gen))
-  
-  this_gen_data = subset(data, generation == gen)
-  
-  columns_to_drop = c("generation", "location")
-  right_rows = this_gen_data[,!(names(this_gen_data) %in% columns_to_drop)]
-  
-  return(right_rows)
-}
+# transform_data_file_into_error_file("data/RSWN/lexicase/data1.csv")
+# data_frame1 = make_frame_from_errors_file(
+#   "data/RSWN/lexicase/errors_data1.csv", 1, 
+#   "replace-space-with-newline", "lexicase", 20, elitize_generation_data)
+# write.csv(data_frame1, "data/RSWN/lexicase/error_counts_and_div1.csv")
+```
 
-# Takes a generation of error data, and converts it to 1 for eliteness on that test case and 0 for not-eliteness
-elitize_generation_data = function(gen_data){
-  # Note: 0 means not elite, 1 means elite
-  
-  result <- gen_data
-  for (i in 1:length(gen_data)) {
-    result[i] <- ifelse(gen_data[i] == min(gen_data[i]), 1, 0)
-    }
-  
-  return(result)
-}
+Lexicase, Run 6, a success
+```{r}
+# transform_data_file_into_error_file("data/RSWN/lexicase/data6.csv")
+# data_frame6 = make_frame_from_errors_file(
+#   "data/RSWN/lexicase/errors_data6.csv", 6, 
+#   "replace-space-with-newline", "lexicase", 20, elitize_generation_data)
+# write.csv(data_frame6, "data/RSWN/lexicase/error_counts_and_div6.csv")
+```
 
-# Takes a generation of error data, and converts it to 1 for passing that test case and 0 for failing
-pass_fail_generation_data = function(gen_data){
-  # Note: 0 means fail, 1 means pass
-  return(ifelse(gen_data == 0, 1, 0))
-}
+Lexicase, Run 2, a failure
+```{r}
+# transform_data_file_into_error_file("../data/RSWN/lexicase/data2.csv")
+# data_frame2 = make_frame_from_errors_file(
+#   "../data/RSWN/lexicase/errors_data2.csv", 2, 
+#   "replace-space-with-newline", "lexicase", 20, elitize_generation_data)
+# write.csv(data_frame2, "../data/RSWN/lexicase/error_counts_and_div2.csv")
+```
 
-# For a generation of binary data, uses agnes to cluster the data and then find the number of clusters that are at least `height` apart.
-count_clusters = function(clustering_data, height) {
-  agnes_results <- agnes(clustering_data, metric = "manhattan")
-  num_clusters <- sum(agnes_results$height>height) + 1
-  
-  #plot(agnes_results, which.plots=2)
-  
-  print(sprintf("  Number of clusters is: %i", num_clusters))
-  
-  return(num_clusters)
-}
-
-# Takes a dataset consisting of individuals, generations, and test case errors, as well as a height cutoff for clustering and a normalization function, and returns a vector of numbers of clusters at each generation.
-num_clusters_for_all_gens = function(data, height, normalization_fn){
-  num_gens = max(data$generation)
-  num_clusters <- sapply(seq(0, num_gens),
-                         function(gen){
-                           count_clusters(normalization_fn(extract_clustering_data(data, gen)),
-                                          height)
-                           }
-                         )
-  
-  return(num_clusters)
-}
+Lexicase, Run 3, a failure
+```{r}
+# transform_data_file_into_error_file("../data/RSWN/lexicase/data3.csv")
+# data_frame3 = make_frame_from_errors_file(
+#   "../data/RSWN/lexicase/errors_data3.csv", 3, 
+#   "replace-space-with-newline", "lexicase", 20, elitize_generation_data)
+# write.csv(data_frame3, "../data/RSWN/lexicase/error_counts_and_div3.csv")
 ```
 
 # Lexicase, Success
 
+```{r}
+data_frame1 = read.csv("../data/RSWN/lexicase/error_counts_and_div1.csv")
+data_frame6 = read.csv("../data/RSWN/lexicase/error_counts_and_div6.csv")
+
+lexicase_success <- rbind(data_frame1, data_frame6)
+```
+
+## Clusters
+```{r}
+ggplot(lexicase_success, aes(x=generation)) + 
+  geom_line(aes(y=cluster.count, color=interaction("Run", run.num))) + 
+  labs(y="Number of Clusters", color="")
+```
+
+## Diversity
+```{r}
+ggplot(lexicase_success, aes(x=generation)) + 
+  geom_line(aes(y=error.diversity, color=interaction("Run", run.num))) + 
+  labs(y="Error Diversity", color="")
+```
+
+# Lexicase, Failure
+
+```{r}
+data_frame2 = read.csv("../data/RSWN/lexicase/error_counts_and_div2.csv")
+data_frame3 = read.csv("../data/RSWN/lexicase/error_counts_and_div3.csv")
+
+lexicase_failure <- rbind(data_frame2, data_frame3)
+```
+
+## Clusters
+```{r}
+ggplot(lexicase_failure, aes(x=generation)) + 
+  geom_line(aes(y=cluster.count, color=interaction("Run", run.num))) + 
+  labs(y="Number of Clusters", color="")
+```
+
+## Diversity
+```{r}
+ggplot(lexicase_failure, aes(x=generation)) + 
+  geom_line(aes(y=error.diversity, color=interaction("Run", run.num))) + 
+  labs(y="Error Diversity", color="")
+```
 
