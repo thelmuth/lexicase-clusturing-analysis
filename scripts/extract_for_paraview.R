@@ -74,13 +74,22 @@ transform_for_paraview <- function(original_csv_data) {
 
 # Takes a data frame with a "generation" column, and splits that into one
 # CSV file per generation for loading into ParaView.
-write_paraview_files <- function(shaped_data) {
+write_paraview_files <- function(shaped_data, path) {
+  para_dir = paste0(dirname(path), "/paraview/")
+  dir.create(para_dir, showWarnings = FALSE)
+  filename = basename(path)
   for (g in unique(shaped_data$generation)) {
     this_gen <- subset(shaped_data, generation==g)[c("individual", "size", "total.error", "test.case.id", "test.case.error", "discrete.error")]
-    write.csv(this_gen, file = paste("../data/Replace space with newline/rswn_lexicase_errors0.csv.", g, sep=""), sep=",", row.names=FALSE)
+    write.csv(this_gen, 
+              file = paste0(para_dir, filename, ".", g), 
+              row.names=FALSE)
   }
 }
 
-data <- read.csv("../data/Replace space with newline/rswn_lexicase_errors0.csv")
-paraview_data <- transform_for_paraview(data)
-write_paraview_files(paraview_data)
+convert_file_to_paraview <- function(error_file_path) {
+  data <- read.csv(error_file_path)
+  paraview_data <- transform_for_paraview(data)
+  write_paraview_files(paraview_data, error_file_path)  
+}
+
+convert_file_to_paraview("../data/replace-space-with-newline/lexicase/rswn_lexicase_errors0.csv")
