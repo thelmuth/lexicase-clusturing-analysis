@@ -31,20 +31,20 @@ These transform the original data files into error files, and transform the erro
 
 Lexicase, Run 1, a success
 ```{r}
-# transform_data_file_into_error_file("data/RSWN/lexicase/data1.csv")
+# transform_data_file_into_error_file("../data/RSWN/lexicase/data1.csv")
 # data_frame1 = make_frame_from_errors_file(
-#   "data/RSWN/lexicase/errors_data1.csv", 1, 
+#   "../data/RSWN/lexicase/errors_data1.csv", 1, 
 #   "replace-space-with-newline", "lexicase", 20, elitize_generation_data)
-# write.csv(data_frame1, "data/RSWN/lexicase/error_counts_and_div1.csv")
+# write.csv(data_frame1, "../data/RSWN/lexicase/error_counts_and_div1.csv")
 ```
 
 Lexicase, Run 6, a success
 ```{r}
-# transform_data_file_into_error_file("data/RSWN/lexicase/data6.csv")
+# transform_data_file_into_error_file("../data/RSWN/lexicase/data6.csv")
 # data_frame6 = make_frame_from_errors_file(
-#   "data/RSWN/lexicase/errors_data6.csv", 6, 
+#   "../data/RSWN/lexicase/errors_data6.csv", 6, 
 #   "replace-space-with-newline", "lexicase", 20, elitize_generation_data)
-# write.csv(data_frame6, "data/RSWN/lexicase/error_counts_and_div6.csv")
+# write.csv(data_frame6, "../data/RSWN/lexicase/error_counts_and_div6.csv")
 ```
 
 Lexicase, Run 2, a failure
