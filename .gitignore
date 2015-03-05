@@ -9,6 +9,7 @@
 
 # RStudio files
 .Rproj.user/
+*.Rproj
 
 # Ignore all our data files so they don't get committed.
 data
