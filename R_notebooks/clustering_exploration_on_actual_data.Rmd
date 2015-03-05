@@ -1,0 +1,88 @@
+---
+title: "Cluster Exploration on Actual Data"
+author: "Tom Helmuth, Nic McPhee"
+date: "March 2, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+**It turns out that when an R-Markdown file is "knitted" the working directory is set to be the directory containing the markdown file. Hence I needed the `../` in the `source` call here, and in the `read.csv` calls later on.**
+
+```{r, message=FALSE}
+library('ggplot2')
+library('cluster')
+library('apcluster')
+
+source('../scripts/clustering.R')
+```
+
+# Import the data
+
+This is run once to transform the data file into an errors-only file. It reads a file like `.../data1.csv` and writes out a file `.../errors_data1.csv` with just the errors.
+
+```{r}
+# transform_data_file_into_error_file("data/RSWN/lexicase/data1.csv")
+# transform_data_file_into_error_file("data/RSWN/lexicase/data6.csv")
+```
+
+# Calculate the number of clusters and error diversity
+
+Take the one of the simplified error files generated above, and generate a data frame containing the cluster counts for each generation, as well as the error diversity for each generation. The error diversity is the number of distinct error vectors (distinct semantic outputs) divided by the population size.
+
+```{r}
+# This is slow, so it's commented out.
+
+# data_frame1 = make_frame_from_errors_file(
+#   "data/RSWN/lexicase/errors_data1.csv", 1, 
+#   "replace-space-with-newline", "lexicase", 20, elitize_generation_data)
+# 
+# data_frame6 = make_frame_from_errors_file(
+#   "data/RSWN/lexicase/errors_data6.csv", 6, 
+#   "replace-space-with-newline", "lexicase", 20, elitize_generation_data)
+```
+
+Write out the results into CSV files so we don't have to recompute all this over and over.
+
+```{r}
+# write.csv(data_frame1, "data/RSWN/lexicase/error_counts_and_div1.csv")
+# write.csv(data_frame6, "data/RSWN/lexicase/error_counts_and_div6.csv")
+```
+
+Now read the data in from the newly generated CSV files, and `rbind` them into a single frame.
+
+```{r}
+data_frame1 = read.csv("../data/RSWN/lexicase/error_counts_and_div1.csv")
+data_frame6 = read.csv("../data/RSWN/lexicase/error_counts_and_div6.csv")
+
+both <- rbind(data_frame1, data_frame6)
+```
+
+# Make some plots already!
+
+This plots both the cluster counts and diversity for these two runs. I've just scaled the cluster count by the population size so both plots are on the same y-axis scale.
+
+```{r}
+ggplot(both, aes(x=generation)) + 
+  geom_line(aes(y=error.diversity, color=interaction(" Diversity", run.num))) + 
+  geom_line(aes(y=cluster.count/1000, color=interaction("# clusters", run.num))) + 
+  labs(y="% of population", color="")
+```
+
+Alternatively, we could use fewer colors and rely on the vertical distance to separate the number of clusters from the diversity values.
+
+```{r}
+ggplot(both, aes(x=generation, color=factor(run.num))) + 
+  geom_line(aes(y=error.diversity)) + 
+  geom_line(aes(y=cluster.count/1000)) + 
+  labs(y="% of population", color="Run #")
+```
+
+We an use `geom_smooth()` instead of `geom_line()`, but that washes out way too much of the differences and detail. One thing we totally lose here, for example, is the fact that some runs end before others.
+
+```{r}
+ggplot(both, aes(x=generation)) + 
+  geom_smooth(aes(y=error.diversity, color=" Diversity")) + 
+  geom_smooth(aes(y=cluster.count/1000, color="# clusters")) + 
+  labs(y="% of population", color="")
+```
