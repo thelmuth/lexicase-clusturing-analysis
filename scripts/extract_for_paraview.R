@@ -64,18 +64,26 @@ rename_test_case_columns <- function(data) {
 # thus is quite brittle in the face of change there.
 scale_data <- function(data) {
   max_column = ncol(data)
+  total_error_index = match("total.error", names(data))
+  first_test_case_index = match("0", names(data))
 
   # This adds one first so all the zero values don't blow up on us. Assuming the
   # input is in the range [0, inf), then the result of this is also in that range.
   shifted_log10 <- function(x) log10(x+1)
   
-  log_data <- shifted_log10(data[, c(3, 5:max_column)])
+  # Take the log of all the error data
+  log_data <- shifted_log10(data[, c(total_error_index, first_test_case_index:max_column)])
+
+  # Scale all the error data
   mins <- apply(log_data, 2, min)
   maxes <- apply(log_data, 2, max)
   scaled_data <- as.data.frame(scale(log_data, mins, maxes-mins))
+  
+  # Scale and insert the non-error data
   scaled_data$generation = data$generation
   scaled_data$individual = scale(data$individual, 0, max(data$individual))
-  scaled_data$size = scale(data$size, 0, max(data$size))
+  scaled_data$push.program.size = scale(data$push.program.size, 0, max(data$push.program.size))
+  scaled_data$plush.genome.size = scale(data$plush.genome.size, 0, max(data$plush.genome.size))
   
   return(scaled_data)
 }
@@ -89,7 +97,7 @@ scale_data <- function(data) {
 # This makes some significant assumptions about the column names, which makes
 # it fragile if those change.
 reshape_data <- function(data) {
-  melted_data <- melt(data, id.vars=c("generation", "individual", "total.error", "size"))
+  melted_data <- melt(data, id.vars=c("generation", "individual", "total.error", "push.program.size", "plush.genome.size"))
   
   # Add the discrete.value column that converts the test case error values
   # to either 0 (if the error was 0) or 1.
@@ -103,7 +111,8 @@ reshape_data <- function(data) {
 }
 
 transform_for_paraview <- function(original_csv_data) {
-  data <- rename_test_case_columns(original_csv_data)
+  data <- drop_unnecessary_columns(original_csv_data)
+  data <- rename_test_case_columns(data)
   data <- scale_data(data)
   data <- reshape_data(data)
   return(data)
@@ -116,7 +125,10 @@ write_paraview_files <- function(shaped_data, path) {
   dir.create(para_dir, showWarnings = FALSE)
   filename = basename(path)
   for (g in unique(shaped_data$generation)) {
-    this_gen <- subset(shaped_data, generation==g)[c("individual", "size", "total.error", "test.case.id", "test.case.error", "discrete.error")]
+    this_gen <- subset(shaped_data, generation==g)[c("individual", "push.program.size", 
+                                                     "plush.genome.size", "total.error", 
+                                                     "test.case.id", "test.case.error", 
+                                                     "discrete.error")]
     write.csv(this_gen, 
               file = paste0(para_dir, filename, ".", g), 
               row.names=FALSE)
@@ -129,4 +141,4 @@ convert_file_to_paraview <- function(error_file_path) {
   write_paraview_files(paraview_data, error_file_path)  
 }
 
-convert_file_to_paraview("../data/replace-space-with-newline/lexicase/rswn_lexicase_errors0.csv")
+convert_file_to_paraview("../data/RSWN/lexicase/data6.csv")
