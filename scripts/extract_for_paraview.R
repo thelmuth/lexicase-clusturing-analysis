@@ -1,5 +1,42 @@
 library("reshape2")
 
+# Drop all the columns except for:
+#  * "generation", which will be removed later when we make files, but is needed there
+#  * "individual", which needs to be renamed from "location"
+#  * "push.program.size"
+#  * "plush.genome.size"
+#  * "total.error"
+#  * All the "TCxyz" columns, which will be renamed and scaled later.
+# The ones we want to drop are:
+#  * "uuid"
+#  * "parent.uuids"
+#  * "genetic.operators"
+#  * "push.program"
+#  * "plush.genome"
+# We're coming in with:
+#  * uuid
+#  * generation
+#  * location
+#  * parent.uuids
+#  * genetic.operators
+#  * push.program.size
+#  * plush.genome.size
+#  * push.program
+#  * plush.genome
+#  * total.error
+#  * TC0,...
+drop_unnecessary_columns <- function(data) {
+  columns_to_drop = c("uuid", "parent.uuids", "genetic.operators", 
+                      "push.program", "plush.genome")
+  
+  data = data[,!(names(data) %in% columns_to_drop)]
+  
+  location_field_index = match("location", names(data))
+  colnames(data)[location_field_index] = "individual"
+  
+  return(data)
+}
+
 # Rename all the test case columns from "TCXYZ" to just "XYZ".
 # Assumes that the first test case is TC0 and that go incrementally
 # from there to the last column in the data from. If it turns out
