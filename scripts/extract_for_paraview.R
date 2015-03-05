@@ -9,7 +9,13 @@ library("reshape2")
 rename_test_case_columns <- function(data) {
   max_column = ncol(data)
   first_test_case_index = match("TC0", names(data))
-  colnames(data) <- c(names(data)[1:(first_test_case_index-1)], seq(0, max_column-first_test_case_index))
+  mid = (max_column-first_test_case_index) / 2
+  
+  new_evens = seq(0, mid)
+  new_odds = seq(floor(mid + 0.5), max_column-first_test_case_index)
+  colnames(data)[seq(5, ncol(data), 2)] <- new_evens
+  colnames(data)[seq(6, ncol(data), 2)] <- new_odds
+
   return(data)
 }
 
@@ -72,7 +78,7 @@ write_paraview_files <- function(shaped_data) {
   for (g in unique(shaped_data$generation)) {
     this_gen <- subset(shaped_data, generation==g)[c("individual", "size", "total.error", "test.case.id", "test.case.error", "discrete.error")]
     write.csv(this_gen, file = paste("../data/Replace space with newline/rswn_lexicase_errors0.csv.", g, sep=""), sep=",", row.names=FALSE)
-  }  
+  }
 }
 
 data <- read.csv("../data/Replace space with newline/rswn_lexicase_errors0.csv")
