@@ -27,6 +27,8 @@ source('../scripts/clustering.R')
 
 These transform the original data files into error files, and transform the error data into data frames we can use.
 
+### Lexicase
+
 Lexicase, Run 1, a success
 ```{r}
 # transform_data_file_into_error_file("data/RSWN/lexicase/data1.csv")
@@ -63,7 +65,47 @@ Lexicase, Run 3, a failure
 # write.csv(data_frame3, "../data/RSWN/lexicase/error_counts_and_div3.csv")
 ```
 
-# Lexicase, Success
+### Tourney, size 7
+
+Tourney, Run 50, a success
+```{r}
+# transform_data_file_into_error_file("../data/RSWN/tourney/data50.csv")
+# data_frame50 = make_frame_from_errors_file(
+#   "../data/RSWN/tourney/errors_data50.csv", 50, 
+#   "replace-space-with-newline", "tourney", 20, elitize_generation_data)
+# write.csv(data_frame50, "../data/RSWN/tourney/error_counts_and_div50.csv")
+```
+
+Tourney, Run 52, a success
+```{r}
+# transform_data_file_into_error_file("../data/RSWN/tourney/data52.csv")
+# data_frame52 = make_frame_from_errors_file(
+#   "../data/RSWN/tourney/errors_data52.csv", 52, 
+#   "replace-space-with-newline", "tourney", 20, elitize_generation_data)
+# write.csv(data_frame52, "../data/RSWN/tourney/error_counts_and_div52.csv")
+```
+
+Tourney, Run 57, a failure
+```{r}
+# transform_data_file_into_error_file("../data/RSWN/tourney/data57.csv")
+# data_frame57 = make_frame_from_errors_file(
+#   "../data/RSWN/tourney/errors_data57.csv", 57, 
+#   "replace-space-with-newline", "tourney", 20, elitize_generation_data)
+# write.csv(data_frame57, "../data/RSWN/tourney/error_counts_and_div57.csv")
+```
+
+Tourney, Run 58, a failure
+```{r}
+# transform_data_file_into_error_file("../data/RSWN/tourney/data58.csv")
+# data_frame58 = make_frame_from_errors_file(
+#   "../data/RSWN/tourney/errors_data58.csv", 58, 
+#   "replace-space-with-newline", "tourney", 20, elitize_generation_data)
+# write.csv(data_frame58, "../data/RSWN/tourney/error_counts_and_div58.csv")
+```
+
+# Lexicase
+
+## Success
 
 ```{r}
 data_frame1 = read.csv("../data/RSWN/lexicase/error_counts_and_div1.csv")
@@ -72,21 +114,23 @@ data_frame6 = read.csv("../data/RSWN/lexicase/error_counts_and_div6.csv")
 lexicase_success <- rbind(data_frame1, data_frame6)
 ```
 
-## Clusters
+### Clusters
 ```{r}
 ggplot(lexicase_success, aes(x=generation)) + 
   geom_line(aes(y=cluster.count, color=interaction("Run", run.num))) + 
-  labs(y="Number of Clusters", color="")
+  labs(y="Number of Clusters", color="") +
+  coord_cartesian(ylim=c(0,200))
 ```
 
-## Diversity
+### Diversity
 ```{r}
 ggplot(lexicase_success, aes(x=generation)) + 
   geom_line(aes(y=error.diversity, color=interaction("Run", run.num))) + 
-  labs(y="Error Diversity", color="")
+  labs(y="Error Diversity", color="") +
+  coord_cartesian(ylim=c(0,1))
 ```
 
-# Lexicase, Failure
+## Failure
 
 ```{r}
 data_frame2 = read.csv("../data/RSWN/lexicase/error_counts_and_div2.csv")
@@ -95,17 +139,71 @@ data_frame3 = read.csv("../data/RSWN/lexicase/error_counts_and_div3.csv")
 lexicase_failure <- rbind(data_frame2, data_frame3)
 ```
 
-## Clusters
+### Clusters
 ```{r}
 ggplot(lexicase_failure, aes(x=generation)) + 
   geom_line(aes(y=cluster.count, color=interaction("Run", run.num))) + 
-  labs(y="Number of Clusters", color="")
+  labs(y="Number of Clusters", color="") +
+  coord_cartesian(ylim=c(0,200))
 ```
 
-## Diversity
+### Diversity
 ```{r}
 ggplot(lexicase_failure, aes(x=generation)) + 
   geom_line(aes(y=error.diversity, color=interaction("Run", run.num))) + 
-  labs(y="Error Diversity", color="")
+  labs(y="Error Diversity", color="") +
+  coord_cartesian(ylim=c(0,1))
+```
+
+# Tournament (size 7)
+
+## Success
+
+```{r}
+tourney_data_frame50 = read.csv("../data/RSWN/tourney/error_counts_and_div50.csv")
+tourney_data_frame52 = read.csv("../data/RSWN/tourney/error_counts_and_div52.csv")
+
+tourney_success <- rbind(tourney_data_frame50, tourney_data_frame52)
+```
+
+### Clusters
+```{r}
+ggplot(tourney_success, aes(x=generation)) + 
+  geom_line(aes(y=cluster.count, color=interaction("Run", run.num))) + 
+  labs(y="Number of Clusters", color="") +
+  coord_cartesian(ylim=c(0,200))
+```
+
+### Diversity
+```{r}
+ggplot(tourney_success, aes(x=generation)) + 
+  geom_line(aes(y=error.diversity, color=interaction("Run", run.num))) + 
+  labs(y="Error Diversity", color="") +
+  coord_cartesian(ylim=c(0,1))
+```
+
+## Failure
+
+```{r}
+tourney_data_frame57 = read.csv("../data/RSWN/tourney/error_counts_and_div57.csv")
+tourney_data_frame58 = read.csv("../data/RSWN/tourney/error_counts_and_div58.csv")
+
+tourney_failure <- rbind(tourney_data_frame57, tourney_data_frame58)
+```
+
+### Clusters
+```{r}
+ggplot(tourney_failure, aes(x=generation)) + 
+  geom_line(aes(y=cluster.count, color=interaction("Run", run.num))) + 
+  labs(y="Number of Clusters", color="") +
+  coord_cartesian(ylim=c(0,200))
+```
+
+### Diversity
+```{r}
+ggplot(tourney_failure, aes(x=generation)) + 
+  geom_line(aes(y=error.diversity, color=interaction("Run", run.num))) + 
+  labs(y="Error Diversity", color="") +
+  coord_cartesian(ylim=c(0,1))
 ```
 
