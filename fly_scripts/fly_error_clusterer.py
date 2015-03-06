@@ -12,7 +12,7 @@ selection = "lexicase"
 #selection = "tourney"
 #selection = "ifs"
 
-output_directory = "/home/thelmuth/Results/clustering-bench/" + namespace + "/zips/"
+output_directory = "/home/thelmuth/Results/clustering-bench/" + namespace + "/"
 r_directory = "/home/thelmuth/lexicase-clusturing-analysis/fly_scripts/"
 
 title_string = "Find Numbers of Clusters | " + namespace + " | "
@@ -27,6 +27,8 @@ if selection == "tourney":
 if selection == "ifs":
     title_string += "IFS (size 7)"
     output_directory += "ifs-7/"
+
+output_directory += "zips/"
 
 ##########################################################################
 # Probably don't change these

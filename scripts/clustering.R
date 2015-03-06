@@ -10,7 +10,7 @@ transform_data_file_into_error_file <- function(file_path){
   
   data = data[,!(names(data) %in% columns_to_drop)]
   
-  write_path = paste0(dirname(file_path), "/", "errors_", basename(file_path))
+  write_path = paste(dirname(file_path), "/", "errors_", basename(file_path), sep="")
   
   write.csv(data, write_path, row.names = FALSE) 
 }

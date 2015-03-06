@@ -6,11 +6,11 @@ number_runs = 100
 
 namespace = "replace-space-with-newline"
 
-selection = "lexicase"
-#selection = "tourney"
+#selection = "lexicase"
+selection = "tourney"
 #selection = "ifs"
 
-output_directory = "/home/thelmuth/Results/clustering-bench/" + namespace + "/zips/"
+output_directory = "/home/thelmuth/Results/clustering-bench/" + namespace + "/"
 r_directory = "/home/thelmuth/lexicase-clusturing-analysis/fly_scripts/"
 
 title_string = "Preprocess Error Data | " + namespace + " | "
@@ -25,6 +25,8 @@ if selection == "tourney":
 if selection == "ifs":
     title_string += "IFS (size 7)"
     output_directory += "ifs-7/"
+
+output_directory += "zips/"
 
 ##########################################################################
 # Probably don't change these
