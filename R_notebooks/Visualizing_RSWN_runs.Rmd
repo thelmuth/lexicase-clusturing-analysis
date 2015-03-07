@@ -1,0 +1,82 @@
+---
+title: "Visualizing RSWN runs"
+author: "Nic McPhee and Tom Helmuth"
+date: "7 March 2015"
+output: html_document
+---
+
+# Load the data
+
+Tom figured out [how to load data from a bunch of files in a directory](http://rpubs.com/thelmuth/clustering_runs), so I'm borrowing that code.
+
+First the lexicase data:
+
+```{r}
+lexicase_file_list = list.files(path="../data/RSWN/lexicase/clustering/", 
+                                pattern="*.csv")
+lexicase_frames = lapply(paste("../data/RSWN/lexicase/clustering/", 
+                               lexicase_file_list, sep=""), read.csv)
+
+lexicase_data = do.call(rbind, lexicase_frames)
+```
+
+Now the tournament (size 7) data:
+
+```{r}
+tourney_file_list = list.files(path="../data/RSWN/tourney/clustering/", 
+                               pattern="*.csv")
+tourney_frames = lapply(paste("../data/RSWN/tourney/clustering/", 
+                              tourney_file_list, sep=""), read.csv)
+
+tourney_data = do.call(rbind, tourney_frames)
+```
+
+Let's combine all that into a single great big data frame:
+
+```{r}
+rswn_data <- rbind(lexicase_data, tourney_data)
+```
+
+# Plotting lexicase results
+
+```{r}
+library("ggplot2")
+library("plyr")
+```
+
+I tried several different ways to visualize the lexicase runs, focusing on trying to see the differences between successful and unsuccessful runs. None of these are great, though.
+
+The first colors the points, and uses `geom_smooth()` to try to coalesce the two groups. One major problem with this, though, is that the successful runs end early, and the smoothed curve ends up being only about runs that hadn't ended at that point. The other big problem is that the confidence intervals are constructed assuming a normal distribution, and it's pretty clear that our data is almost certainly not anywhere close to normally distributed.
+
+```{r}
+ggplot(lexicase_data, aes(x=generation, y=cluster.count, color=succeeded)) +
+  geom_point(alpha=0.05) +
+  geom_smooth()
+```
+
+Then I tried preserving the lines because that had been useful when we only had a few runs, but with this many runs it's really not very helpful as the lines just pile up on top of each other.
+
+```{r}
+ggplot(lexicase_data, aes(x=generation, y=cluster.count, 
+                          color=succeeded, group=run.num)) +
+  geom_line(alpha=0.25)
+```
+
+Then I split the successful and unsuccessful runs into two different facet panes in the hopes that it might be easier to see what's happening. It does help, but I'm not sure what it _says_. There seem to be some groups into bands in the successful runs, but I'm not sure if (a) that's "real" and (b) what we'd say about it.
+
+```{r}
+ggplot(lexicase_data, aes(x=generation, y=cluster.count, 
+                          color=succeeded, group=run.num)) +
+  geom_line(alpha=0.25) +
+  facet_grid(. ~ succeeded)
+```
+
+I tried using boxplots in the hopes that might help us see the distributions more clearly, grouping generations into clumps of 25 to reduce the number of boxes to a visually manageable number. That really didn't work all that well. It looks like the successful runs _might_ have a tendency toward smaller values, but that's badly skewed by the problem that successful runs end early, so the number of data points in the "successful" boxplots gets smaller and smaller as you move to the right.
+
+```{r}
+ggplot(lexicase_data, aes(x=generation, y=cluster.count,
+                          color=succeeded, 
+                          group=interaction(succeeded, 
+                                            round_any(generation, 25, floor)))) +
+  geom_boxplot(alpha=0.25)
+```
