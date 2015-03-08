@@ -5,6 +5,11 @@ date: "7 March 2015"
 output: html_document
 ---
 
+```{r}
+library("ggplot2")
+library("plyr")
+```
+
 # Load the data
 
 Tom figured out [how to load data from a bunch of files in a directory](http://rpubs.com/thelmuth/clustering_runs), so I'm borrowing that code.
@@ -37,14 +42,59 @@ Let's combine all that into a single great big data frame:
 rswn_data <- rbind(lexicase_data, tourney_data)
 ```
 
-# Plotting lexicase results
+# Plotting all the RSWN error diversity results
+
+Can we plot all the error diversity in a way that is informative? If we facet the data it's very clear that the diversity numbers are generally _much_ higher for lexicase than for tournament selection. It's not super obvious what differences there are between the successful and unsuccessful runs, though.
 
 ```{r}
-library("ggplot2")
-library("plyr")
+ggplot(rswn_data, aes(x=generation, y=error.diversity, group=run.num)) +
+  geom_line(alpha=0.25) +
+  facet_grid(succeeded ~ treatment)
 ```
 
-I tried several different ways to visualize the lexicase runs, focusing on trying to see the differences between successful and unsuccessful runs. None of these are great, though.
+Using `geom_smooth()` to coalesce all the data also makes it clear that lexicase has _much_ higher diversity numbers than tournament selection. (It's not clear how meaningful the confidence intervals are since `stat_smooth`'s confidence interval stats assume the data is normally distributed, which this data almost certainly isn't.)
+
+It's interesting that the diversity numbers for successful runs are consistently below those for unsuccessful runs. This is presumably because in the generations just before success, the diversity values drop as the population converges on a successful approach.
+
+```{r}
+ggplot(rswn_data, aes(x=generation, y=error.diversity,
+                      color=interaction(succeeded, treatment))) +
+  geom_point(alpha=0.02) +
+  geom_smooth() +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(color="Treatment . Succeeded")
+```
+
+# Plotting all the RSWN clustering results
+
+Can we plot all the clustering data in a way that is informative? Let's start by faceting on both treatment (lexicase and tournament) and whether the run succeeded. This definitely suggests that lexicase tends towards more clusters than tournament. The visualization is somewhat skewed, however, by the fact that successful runs end early so all we're seeing out at the ends are a small number of runs that succeeded late.
+
+```{r}
+ggplot(rswn_data, aes(x=generation, y=cluster.count, group=run.num)) +
+  geom_line(alpha=0.25) +
+  facet_grid(succeeded ~ treatment)
+```
+
+Another way to put it all on one plot is to use smoothing to coalesce the data. One major concern about this, though, is the smoothing assumes normally distributed data, and our data is quite certainly not normally distributed.
+
+That said, this plot helps make it clear that lexicase generally has substantially more clusters than tournament selection, which is cool. In both cases the successful lines are more "wiggly" than the unsuccessful lines; this probably at least in part because successful runs end early, which probably causes the smoothing to "jump" in the absense of the runs that just ended. 
+
+It's also likely that successful runs eventually have a drop in the number of clusters, as that's probably what happens when the run starts to "discover" combinations that can solve a broad range of test cases. It's interesting that the number of clusters in the failed lexicase runs keep climbing up (if but slowly by the end), and the successful lexicase runs show cycles of climbing and falling number of clusters. My guess is the drops are when runs are "discovering" important things, which often then leads to success. Those successful runs are removed, which then causes the number of clusters to jump/climb up, until there's another group of important discoveries, which leads to a new drop.
+
+Have we ever looked at the distribution of when successful runs end? I'm guessing that lexicase has a more spread out distribution, where if tournament doesn't succeed early it's very unlikely to ever succeed. Thus adding another 100 generations would be of very little value with tournament selection, but might lead to several more successes for lexicase.
+
+```{r}
+ggplot(rswn_data, aes(x=generation, y=cluster.count,
+                      color=interaction(treatment, succeeded))) +
+  geom_point(alpha=0.02) +
+  geom_smooth() +
+  coord_cartesian(ylim = c(0, 100)) +
+  labs(color="Treatment . Succeeded")
+```
+
+# Plotting just lexicase clustering results
+
+As well as plotting everything, I tried several different ways to visualize just the lexicase runs, focusing on trying to see the differences between successful and unsuccessful runs. None of these are great, though.
 
 The first colors the points, and uses `geom_smooth()` to try to coalesce the two groups. One major problem with this, though, is that the successful runs end early, and the smoothed curve ends up being only about runs that hadn't ended at that point. The other big problem is that the confidence intervals are constructed assuming a normal distribution, and it's pretty clear that our data is almost certainly not anywhere close to normally distributed.
 
