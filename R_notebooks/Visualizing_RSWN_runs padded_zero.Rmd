@@ -32,17 +32,12 @@ pad_frame <- function(fr) {
                        normalization.function = rep((fr$normalization.function)[1], 
                                                     num_missing_gens),
                        generation = seq(last_gen, 299),
-#                        cluster.count = rep(1,
-#                                            num_missing_gens),
-#                        error.diversity = rep(1/1000,
-#                                              num_missing_gens)
-                       cluster.count = rep((fr$cluster.count)[last_gen],
+                       cluster.count = rep(1,
                                            num_missing_gens),
-                       error.diversity = rep((fr$error.diversity)[last_gen],
+                       error.diversity = rep(1/1000,
                                              num_missing_gens)
                        )
-  # result = rbind(fr, padding)
-  result = fr
+  result = rbind(fr, padding)
   return(result)
 }
 ```
