@@ -8,8 +8,8 @@ namespace = "replace-space-with-newline"
 
 height = 20
 
-selection = "lexicase"
-#selection = "tourney"
+#selection = "lexicase"
+selection = "tourney"
 #selection = "ifs"
 
 output_directory = "/home/thelmuth/Results/clustering-bench/" + namespace + "/"
@@ -28,7 +28,7 @@ if selection == "ifs":
     title_string += "IFS (size 7)"
     output_directory += "ifs-7/"
 
-output_directory += "zips/"
+output_directory += "csv/"
 
 ##########################################################################
 # Probably don't change these
