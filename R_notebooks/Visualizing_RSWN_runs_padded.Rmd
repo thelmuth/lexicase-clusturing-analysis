@@ -103,9 +103,11 @@ It's interesting that the diversity numbers for successful runs are consistently
 
 ```{r}
 ggplot(rswn_data, aes(x=generation, y=error.diversity,
-                      color=interaction(succeeded, treatment))) +
+                      color=interaction(succeeded, treatment),
+                      fill=interaction(succeeded, treatment), alpha=0.05)) +
   geom_point(alpha=0.02) +
-  geom_smooth() +
+  stat_summary(fun.data="median_hilow", conf.int=0.5, geom="ribbon", alpha=0.05) +
+#  geom_smooth() +
   coord_cartesian(ylim = c(0, 1)) +
   labs(color="Treatment . Succeeded")
 ```
