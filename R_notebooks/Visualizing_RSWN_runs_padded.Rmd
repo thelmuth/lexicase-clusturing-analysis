@@ -68,10 +68,23 @@ padded_tourney_frames = lapply(tourney_frames, pad_frame)
 tourney_data = do.call(rbind, padded_tourney_frames)
 ```
 
+And lastly the iterated fitness sharing (IFS) data:
+
+```{r}
+ifs_file_list = list.files(path="../data/RSWN/ifs/clustering/", 
+                               pattern="*.csv")
+ifs_frames = lapply(paste("../data/RSWN/ifs/clustering/", 
+                              ifs_file_list, sep=""), read.csv)
+
+padded_ifs_frames = lapply(ifs_frames, pad_frame)
+
+ifs_data = do.call(rbind, padded_ifs_frames)
+```
+
 Let's combine all that into a single great big data frame:
 
 ```{r}
-rswn_data <- rbind(lexicase_data, tourney_data)
+rswn_data <- rbind(lexicase_data, tourney_data, ifs_data)
 ```
 
 # Plotting all the RSWN error diversity results
