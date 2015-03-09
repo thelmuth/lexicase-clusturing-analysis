@@ -112,6 +112,23 @@ ggplot(rswn_data, aes(x=generation, y=error.diversity,
   labs(color="Treatment . Succeeded")
 ```
 
+```{r}
+wilcox_ci <- function (data, gen, first_treatment, second_treatment, value) {
+  gen_data = subset(data, generation==gen)
+  first_data = subset(gen_data, treatment == first_treatment)
+  second_data = subset(gen_data, treatment == second_treatment)
+  wt <- wilcox.test(first_data[[value]],
+                    second_data[[value]], 
+                    conf.int=TRUE,
+                    conf.level=0.99)
+  return(wt$conf.int)
+}
+
+lex_tourney_cis <- melt(sapply(seq(0, 299), function (gen) wilcox_ci(rswn_data, gen, 'lexicase', 'tourney', 'cluster.count')))
+
+ggplot(lex_tourney_cis, aes(x=Var2, y=value, group=Var1)) + geom_line()
+```
+
 # Plotting all the RSWN clustering results
 
 Can we plot all the clustering data in a way that is informative? Let's start by faceting on both treatment (lexicase and tournament) and whether the run succeeded. This definitely suggests that lexicase tends towards more clusters than tournament. The visualization is somewhat skewed, however, by the fact that successful runs end early so all we're seeing out at the ends are a small number of runs that succeeded late.
