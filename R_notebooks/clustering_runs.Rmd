@@ -116,10 +116,11 @@ ggplot(all_data, aes(x=all_data$generation)) +
 ```{r}
 all_rswn_data = rbind(all_data, all_data_tourney, all_data_ifs)
 
+all_rswn_data$treatment = factor(all_rswn_data$treatment, levels = c("lexicase", "tourney", "ifs"))
+
 rswn_div_plot <- ggplot(all_rswn_data, aes(x=generation, y=error.diversity,
                                                             color=treatment)) + 
-  stat_summary(fun.data="median_hilow", conf.int=0.5, alpha=0.5) + theme(axis.title.x=element_blank()) +
-  scale_color_discrete(breaks=c("lexicase", "tourney", "ifs"))
+  stat_summary(fun.data="median_hilow", conf.int=0.5, alpha=0.5) + theme(axis.title.x=element_blank())
   #facet_grid(treatment ~ .)
 
 count_successes_for_gen <- function(data, gen) {
@@ -138,8 +139,9 @@ ifs_success_counts = data.frame(generation=seq(0, 300), num.successes=count_all_
 ifs_success_counts$treatment = 'ifs'
 
 success_counts = rbind(lexicase_success_counts, tourney_success_counts, ifs_success_counts)
+success_counts$treatment = factor(success_counts$treatment, levels = c("lexicase", "tourney", "ifs"))
 
-rswn_lex_success_plot <- ggplot(success_counts, aes(x=generation, y=num.successes, color=treatment)) + geom_line() + ylim(c(0,100)) + scale_color_discrete(breaks=c("lexicase", "tourney", "ifs"))
+rswn_lex_success_plot <- ggplot(success_counts, aes(x=generation, y=num.successes, color=treatment)) + geom_line() + ylim(c(0,100))
 
 grid.arrange(arrangeGrob(rswn_div_plot, rswn_lex_success_plot, heights=c(3/4, 1/4), ncol=1))
 
