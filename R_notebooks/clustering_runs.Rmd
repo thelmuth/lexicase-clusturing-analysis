@@ -17,6 +17,7 @@ This document will try some plotting of data across full sets of runs.
 library('ggplot2')
 library('cluster')
 library('Hmisc')
+library("gridExtra")
 #library('apcluster')
 
 setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis/R_notebooks")
@@ -93,25 +94,7 @@ plot(all_data_ifs$generation, all_data_ifs$cluster.count, pch=3, cex=0.3, col=rg
 plot(all_data_ifs$generation, all_data_ifs$error.diversity, pch=3, cex=0.3, col=rgb(0.3,0.4,0.6,0.5), ylim=c(0, 1))
 ```
 
-# To Do
-
-- plot things based on success/failure
-
-- try Nic's envelope graphs comparing lexicase to tourney
-
-```{r}
-ggplot(all_data, aes(x=all_data$generation)) + 
-  geom_smooth(aes(y=all_data$error.diversity, color=" Diversity")) + 
-  labs(y="% of population", color="")
-```
-
-```{r}
-ggplot(all_data, aes(x=all_data$generation)) + 
-  geom_smooth(aes(y=all_data$cluster.count, color=" Diversity")) + 
-  labs(y="% of population", color="")
-```
-
-## Plot medians
+# Plot medians
 
 ```{r}
 all_rswn_data = rbind(all_data, all_data_tourney, all_data_ifs)
@@ -181,7 +164,7 @@ plot(syllables_lexicase$generation, syllables_lexicase$error.diversity, pch=3, c
 
 ## Import the Data
 
-```{r Import the Syllables Data}
+```{r}
 # Copied from SO
 file_list_syllables_ifs = list.files(path="../data/syllables/ifs/clustering/", pattern="*.csv")
 files_syllables_ifs = lapply(paste("../data/syllables/ifs/clustering/", file_list_syllables_ifs, sep=""), read.csv)
@@ -200,3 +183,8 @@ plot(syllables_ifs$generation, syllables_ifs$cluster.count, pch=3, cex=0.3, col=
 plot(syllables_ifs$generation, syllables_ifs$error.diversity, pch=3, cex=0.3, col=rgb(0.3,0.4,0.6,0.5), ylim=c(0, 1))
 ```
 
+# To Do
+
+- Try clustering on test cases instead of individuals
+- Figure out what we want to plot
+- Try plots of confidence intervals of differences between lexicase and tourney/IFS
