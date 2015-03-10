@@ -9,13 +9,13 @@ namespace = "syllables"
 height = 20
 
 #selection = "lexicase"
-selection = "tourney"
-#selection = "ifs"
+#selection = "tourney"
+selection = "ifs"
 
 output_directory = "/home/thelmuth/Results/clustering-bench/" + namespace + "/"
 r_directory = "/home/thelmuth/lexicase-clusturing-analysis/fly_scripts/"
 
-title_string = "Find Numbers of Clusters | " + namespace + " | "
+title_string = "Preprocess Error Data; Find Numbers of Clusters | " + namespace + " | "
 
 # Make selection experiments easier
 if selection == "lexicase":
@@ -49,7 +49,11 @@ Job -title {%s} -subtasks {
 """ % (title_string)
 
 for run in range(0, number_runs):
-    full_command = "echo Beginning clustering R script; cd %s; Rscript %scluster_based_on_errors.R %s errors_data%i.csv %s %s %i %i; echo Done" % (output_directory, r_directory, r_directory, run, namespace, selection, run, height)
+    data_preprocessing_command = "echo Unzipping; cd %s; tar zxf data%i.csv.tar.gz; echo Running R transformation; Rscript %stransform_data_file.R %s data%i.csv; echo Removing data%i.csv; rm data%i.csv;" % (output_directory, run, r_directory, r_directory, run, run, run)
+
+    error_clustering_command = "echo Beginning clustering R script; cd %s; Rscript %scluster_based_on_errors.R %s errors_data%i.csv %s %s %i %i; echo Done;" % (output_directory, r_directory, r_directory, run, namespace, selection, run, height)
+
+    full_command = data_preprocessing_command + error_clustering_command
 
     alfcode += """    Task -title {%s - run %i} -cmds {
         RemoteCmd {/bin/sh -c {%s}} -service {%s}
