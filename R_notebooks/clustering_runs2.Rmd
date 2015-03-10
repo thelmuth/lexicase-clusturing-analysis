@@ -1,0 +1,92 @@
+---
+title: "Clustering Runs 2"
+author: "Tom Helmuth"
+date: "March 10, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+# Introduction
+
+The goal of this document is to consolidate some of the most useful plots we've made using the clustering and diversity data.
+
+## Setup Code
+
+```{r, message=FALSE}
+library('ggplot2')
+library('cluster')
+library('Hmisc')
+library("gridExtra")
+
+setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis/R_notebooks")
+
+source('../scripts/clustering.R')
+```
+
+## Import Data
+
+### Replace Space With Newline
+
+```{r}
+data_rswn_lexicase = import_from_error_clustering_and_div("../data/RSWN/lexicase/clustering/")
+data_rswn_tourney = import_from_error_clustering_and_div("../data/RSWN/tourney/clustering/")
+data_rswn_ifs = import_from_error_clustering_and_div("../data/RSWN/ifs/clustering/")
+data_rswn = rbind(data_rswn_lexicase, data_rswn_tourney, data_rswn_ifs)
+data_rswn$succeeded = factor(data_rswn$succeeded, levels = c(TRUE, FALSE))
+data_rswn$treatment = factor(data_rswn$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Syllables
+
+```{r}
+data_syllables_lexicase = import_from_error_clustering_and_div("../data/syllables/lexicase/clustering/")
+data_syllables_tourney = import_from_error_clustering_and_div("../data/syllables/tourney/clustering/")
+data_syllables_ifs = import_from_error_clustering_and_div("../data/syllables/ifs/clustering/")
+data_syllables = rbind(data_syllables_lexicase, data_syllables_tourney, data_syllables_ifs)
+data_syllables$succeeded = factor(data_syllables$succeeded, levels = c(TRUE, FALSE))
+data_syllables$treatment = factor(data_syllables$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### String Lengths Backwards
+
+```{r}
+data_string_lengths_backwards_lexicase = import_from_error_clustering_and_div("../data/string-lengths-backwards/lexicase/clustering/")
+#data_string_lengths_backwards_tourney = import_from_error_clustering_and_div("../data/string-lengths-backwards/tourney/clustering/")
+#data_string_lengths_backwards_ifs = import_from_error_clustering_and_div("../data/string-lengths-backwards/ifs/clustering/")
+#data_string_lengths_backwards = rbind(data_string_lengths_backwards_lexicase, data_string_lengths_backwards_tourney, data_string_lengths_backwards_ifs)
+#data_string_lengths_backwards$succeeded = factor(data_string_lengths_backwards$succeeded, levels = c(TRUE, FALSE))
+#data_string_lengths_backwards$treatment = factor(data_string_lengths_backwards$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+# Scatterplots of Data
+
+It's often nice to see every point of every run, showing the trends and where densest areas occur.
+
+## RSWN
+
+```{r}
+plot_all_diversity_lines_faceted(data_rswn)
+
+plot_all_clusters_lines_faceted(data_rswn)
+```
+
+## Syllables
+
+```{r}
+plot_all_diversity_lines_faceted(data_syllables)
+
+plot_all_clusters_lines_faceted(data_syllables)
+```
+
+## String Lengths Backwards
+
+Only has lexicase data so far.
+
+```{r}
+plot_all_diversity_lines_faceted(data_string_lengths_backwards_lexicase)
+
+plot_all_clusters_lines_faceted(data_string_lengths_backwards_lexicase)
+```
+
+
