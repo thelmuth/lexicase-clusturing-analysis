@@ -18,6 +18,7 @@ library('ggplot2')
 library('cluster')
 library('Hmisc')
 library("gridExtra")
+library("plyr")
 
 setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis/R_notebooks")
 
@@ -89,4 +90,26 @@ plot_all_diversity_lines_faceted(data_string_lengths_backwards_lexicase)
 plot_all_clusters_lines_faceted(data_string_lengths_backwards_lexicase)
 ```
 
+
+# Plot Medians and Quartiles
+
+## RSWN
+
+```{r}
+plot_diversity_medians_and_quartiles(data_rswn)
+
+#add_generational_success_counts_plot(data_rswn, plot_diversity_medians_and_quartiles(data_rswn))
+
+plot_cluster_count_medians_and_quartiles(data_rswn)
+```
+
+## Syllables
+
+```{r}
+plot_diversity_medians_and_quartiles(data_syllables)
+
+#add_generational_success_counts_plot(data_syllables, plot_diversity_medians_and_quartiles(data_syllables))
+
+plot_cluster_count_medians_and_quartiles(data_syllables)
+```
 

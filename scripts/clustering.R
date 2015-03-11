@@ -1,5 +1,6 @@
 
 library('cluster')
+library("plyr")
 
 #setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis")
 
@@ -148,6 +149,40 @@ error_diversity = function(data){
 }
 
 #####################################################################
+## Functions for finding success rates [BROKEN FOR NOW]
+#####################################################################
+
+# # For data and a particular generation, count how many runs had succeeded at that generation
+# count_successes_for_gen <- function(data, gen) {
+#   num_runs = nrow(subset(data_rswn, generation == 0))
+#   return(num_runs - nrow(subset(data_rswn, generation == gen)))
+# }
+# 
+# # Count the number of successes in the data each generation
+# count_all_successes <- function(data) {
+#   max_gen = max(data$generation)
+#   return(sapply(seq(0, max_gen), function (gen) count_successes_for_gen(data, gen)))
+# }
+# 
+# # Make data frame with number of successes for each treatment at each generation
+# get_generational_success_counts <- function(data){
+#   treatments = levels(data$treatment)
+#   
+#   result = ldply(treatments, function(treat) {
+#     treat_data = subset(data, treatment == treat)
+#     max_gen = max(treat_data$generation)
+#     
+#     success_counts = data.frame(generation = seq(0, max_gen),
+#                                 treatment = rep(treat, max_gen+1),
+#                                 num.successes = count_all_successes(treat_data))
+#     
+#     return(success_counts)
+#   })
+#   
+#   return(result)
+# }
+
+#####################################################################
 ## Functions for making plots
 #####################################################################
 
@@ -171,3 +206,50 @@ plot_all_clusters_lines_faceted <- function(data) {
     theme_bw()
   return(p)
 }
+
+# Plots diversity medians and quartiles of data. Takes optional quartiles_percent, which tells what percent of the center data to include
+plot_diversity_medians_and_quartiles <- function(data, quartiles_percent = 0.5){
+  p <- ggplot(data, aes(x=generation, y=error.diversity, color=treatment)) + 
+    stat_summary(fun.data="median_hilow", conf.int=quartiles_percent, alpha=0.5) +
+    theme_bw() +
+    ylim(c(0,1))
+  return(p)
+}
+
+# Plots clusters medians and quartiles of data. Takes optional quartiles_percent, which tells what percent of the center data to include
+plot_cluster_count_medians_and_quartiles <- function(data, quartiles_percent = 0.5){            
+#   treatments = levels(data$treatment)  
+#   max_clusters = 1 + max(sapply(treatments, function(treat) {
+#     hilow = smedian.hilow(subset(data, treatment == treat)$cluster.count, conf.int=quartiles_percent)
+#     return(hilow["Upper"])
+#   }))
+
+  p <- ggplot(data, aes(x=generation, y=cluster.count, color=treatment)) + 
+    stat_summary(fun.data="median_hilow", conf.int=quartiles_percent, alpha=0.5) +
+    theme_bw()
+  return(p)
+}
+
+# # Makes a plot giving the number of successes at or before each generation
+# plot_generational_success_counts <- function(data){
+#   success_counts = get_generational_success_counts(data)
+#   
+#   first_treatment = levels(data$treatment)[1]
+#   num_runs_per_treatment = nrow(subset(data, treatment==first_treatment & generation == 0))
+#   
+#   p <- ggplot(success_counts, aes(x=generation, y=num.successes, color=treatment)) +
+#     geom_line() +
+#     ylim(c(0, num_runs_per_treatment)) +
+#     theme_bw()
+#   return(p)
+# }
+# 
+# # Add a number of successes plot below the given plot for the given data
+# add_generational_success_counts_plot <- function(data, other_plot){
+#   success_plot = plot_generational_success_counts(data)
+#   op = other_plot + theme(axis.title.x=element_blank(),
+#                           axis.ticks.x=element_blank(),
+#                           axis.text.x=element_blank())
+#   result = grid.arrange(arrangeGrob(op, success_plot, heights=c(3/4, 1/4), ncol=1))
+#   return(result)
+# }
