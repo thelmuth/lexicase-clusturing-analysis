@@ -82,7 +82,7 @@ plot_all_clusters_lines_faceted(data_syllables)
 
 ## String Lengths Backwards
 
-Only has lexicase data so far.
+Missing IFS data.
 
 ```{r}
 plot_all_diversity_lines_faceted(data_string_lengths_backwards)
@@ -96,83 +96,26 @@ plot_all_clusters_lines_faceted(data_string_lengths_backwards)
 ## RSWN
 
 ```{r}
-plot_diversity_medians_and_quartiles(data_rswn)
+add_generational_success_counts_plot(data_rswn, plot_diversity_medians_and_quartiles(data_rswn))
 
-#add_generational_success_counts_plot(data_rswn, plot_diversity_medians_and_quartiles(data_rswn))
+plot_cluster_count_medians_and_quartiles(data_rswn) + facet_grid(succeeded ~ .)
 
-plot_cluster_count_medians_and_quartiles(data_rswn) # + facet_grid(succeeded ~ .)
+add_generational_success_counts_plot(data_rswn, plot_cluster_count_medians_and_quartiles(data_rswn))
 ```
 
 ## Syllables
 
 ```{r}
-plot_diversity_medians_and_quartiles(data_syllables)
+add_generational_success_counts_plot(data_syllables, plot_diversity_medians_and_quartiles(data_syllables))
 
-#add_generational_success_counts_plot(data_syllables, plot_diversity_medians_and_quartiles(data_syllables))
-
-plot_cluster_count_medians_and_quartiles(data_syllables)
+add_generational_success_counts_plot(data_syllables, plot_cluster_count_medians_and_quartiles(data_syllables))
 ```
 
 ## String Lengths Backwards
 
 ```{r}
-plot_diversity_medians_and_quartiles(data_string_lengths_backwards)
+add_generational_success_counts_plot(data_string_lengths_backwards, plot_diversity_medians_and_quartiles(data_string_lengths_backwards))
 
-#add_generational_success_counts_plot(data_string_lengths_backwards, plot_diversity_medians_and_quartiles(data_string_lengths_backwards))
-
-plot_cluster_count_medians_and_quartiles(data_string_lengths_backwards)
-```
-
-
-# Scratchpad
-
-```{r}
-
-# Finds the number of successes up to each generation for a particular treatment and maximum generations; It is expected that the data only contains 
-get_successes_up_to_each_generation_treatment <- function(data, treat, max_gen){
-  success_gens = subset(data, generation == 0 & treatment == treat)$success.generation
-  
-  successes_before_or_at_each_gen = sapply(seq(0, max_gen),
-                                           function(gen) sum(success_gens <= gen, na.rm = TRUE))
-  
-  result = data.frame(generation = seq(0, max_gen),
-                      treatment = rep(treat, max_gen + 1),
-                      num.successes = successes_before_or_at_each_gen)
-  
-  return(result)
-}
-
-get_successes_up_to_each_generation <- function(data){
-  max_gen = max(data$generation)
-  treatments = levels(data$treatment)
-  
-  result = ldply(treatments,
-                 function(treat) get_successes_up_to_each_generation_treatment(data,
-                                                                               treat,
-                                                                               max_gen))
-  
-  return(result)
-}
-
-```
-
-```{r}
-data_BOGUS = import_from_error_clustering_and_div("../data/BOGUS/lexicase/clustering/")
-
-success_counts_BOGUS = get_successes_up_to_each_generation(data_BOGUS)
-
-ggplot(success_counts_BOGUS, aes(x=generation, y=num.successes, color=treatment)) +
-  geom_line() +
-  ylim(c(0, 5)) +
-  theme_bw()
-```
-
-```{r}
-success_counts_rswn = get_successes_up_to_each_generation(data_rswn)
-
-ggplot(success_counts_rswn, aes(x=generation, y=num.successes, color=treatment)) +
-  geom_line() +
-  ylim(c(0, 100)) +
-  theme_bw()
+add_generational_success_counts_plot(data_string_lengths_backwards, plot_cluster_count_medians_and_quartiles(data_string_lengths_backwards))
 ```
 
