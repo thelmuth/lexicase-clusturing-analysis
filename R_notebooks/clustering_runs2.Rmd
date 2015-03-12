@@ -54,10 +54,10 @@ data_syllables$treatment = factor(data_syllables$treatment, levels = c("lexicase
 ```{r}
 data_string_lengths_backwards_lexicase = import_from_error_clustering_and_div("../data/string-lengths-backwards/lexicase/clustering/")
 data_string_lengths_backwards_tourney = import_from_error_clustering_and_div("../data/string-lengths-backwards/tourney/clustering/")
-#data_string_lengths_backwards_ifs = import_from_error_clustering_and_div("../data/string-lengths-backwards/ifs/clustering/")
-data_string_lengths_backwards = rbind(data_string_lengths_backwards_lexicase, data_string_lengths_backwards_tourney)#, data_string_lengths_backwards_ifs)
-#data_string_lengths_backwards$succeeded = factor(data_string_lengths_backwards$succeeded, levels = c(TRUE, FALSE))
-#data_string_lengths_backwards$treatment = factor(data_string_lengths_backwards$treatment, levels = c("lexicase", "tourney", "ifs"))
+data_string_lengths_backwards_ifs = import_from_error_clustering_and_div("../data/string-lengths-backwards/ifs/clustering/")
+data_string_lengths_backwards = rbind(data_string_lengths_backwards_lexicase, data_string_lengths_backwards_tourney, data_string_lengths_backwards_ifs)
+data_string_lengths_backwards$succeeded = factor(data_string_lengths_backwards$succeeded, levels = c(TRUE, FALSE))
+data_string_lengths_backwards$treatment = factor(data_string_lengths_backwards$treatment, levels = c("lexicase", "tourney", "ifs"))
 ```
 
 # Scatterplots of Data
@@ -98,9 +98,9 @@ plot_all_clusters_lines_faceted(data_string_lengths_backwards)
 ```{r}
 add_generational_success_counts_plot(data_rswn, plot_diversity_medians_and_quartiles(data_rswn))
 
-plot_cluster_count_medians_and_quartiles(data_rswn) + facet_grid(succeeded ~ .)
-
 add_generational_success_counts_plot(data_rswn, plot_cluster_count_medians_and_quartiles(data_rswn))
+
+plot_cluster_count_medians_and_quartiles(data_rswn) + facet_grid(succeeded ~ ., labeller=label_both)
 ```
 
 ## Syllables
@@ -116,6 +116,10 @@ add_generational_success_counts_plot(data_syllables, plot_cluster_count_medians_
 ```{r}
 add_generational_success_counts_plot(data_string_lengths_backwards, plot_diversity_medians_and_quartiles(data_string_lengths_backwards))
 
+plot_diversity_medians_and_quartiles(data_string_lengths_backwards) + facet_grid(succeeded ~ ., labeller=label_both)
+
 add_generational_success_counts_plot(data_string_lengths_backwards, plot_cluster_count_medians_and_quartiles(data_string_lengths_backwards))
+
+plot_cluster_count_medians_and_quartiles(data_string_lengths_backwards) + facet_grid(succeeded ~ ., labeller=label_both)
 ```
 
