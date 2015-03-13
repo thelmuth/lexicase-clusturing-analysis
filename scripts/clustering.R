@@ -149,7 +149,7 @@ error_diversity = function(data){
 }
 
 #####################################################################
-## Functions for finding success rates [BROKEN FOR NOW]
+## Functions for finding success rates
 #####################################################################
 
 # Finds the number of successes up to each generation for a particular treatment and maximum generations; It is expected that the data only contains 
