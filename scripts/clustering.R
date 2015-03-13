@@ -1,6 +1,6 @@
 
 library('cluster')
-library("plyr")
+#library("plyr")
 
 #setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis")
 
@@ -152,32 +152,32 @@ error_diversity = function(data){
 ## Functions for finding success rates
 #####################################################################
 
-# Finds the number of successes up to each generation for a particular treatment and maximum generations; It is expected that the data only contains 
-get_successes_up_to_each_generation_treatment <- function(data, treat, max_gen){
-  success_gens = subset(data, generation == 0 & treatment == treat)$success.generation
-  
-  successes_before_or_at_each_gen = sapply(seq(0, max_gen),
-                                           function(gen) sum(success_gens <= gen, na.rm = TRUE))
-  
-  result = data.frame(generation = seq(0, max_gen),
-                      treatment = rep(treat, max_gen + 1),
-                      num.successes = successes_before_or_at_each_gen)
-  
-  return(result)
-}
-
-# Find the number of successes up to each generation for each treatment in data
-get_generational_success_counts <- function(data){
-  max_gen = max(data$generation)
-  treatments = levels(data$treatment)
-  
-  result = ldply(treatments,
-                 function(treat) get_successes_up_to_each_generation_treatment(data,
-                                                                               treat,
-                                                                               max_gen))
-  
-  return(result)
-}
+# # Finds the number of successes up to each generation for a particular treatment and maximum generations; It is expected that the data only contains 
+# get_successes_up_to_each_generation_treatment <- function(data, treat, max_gen){
+#   success_gens = subset(data, generation == 0 & treatment == treat)$success.generation
+#   
+#   successes_before_or_at_each_gen = sapply(seq(0, max_gen),
+#                                            function(gen) sum(success_gens <= gen, na.rm = TRUE))
+#   
+#   result = data.frame(generation = seq(0, max_gen),
+#                       treatment = rep(treat, max_gen + 1),
+#                       num.successes = successes_before_or_at_each_gen)
+#   
+#   return(result)
+# }
+# 
+# # Find the number of successes up to each generation for each treatment in data
+# get_generational_success_counts <- function(data){
+#   max_gen = max(data$generation)
+#   treatments = levels(data$treatment)
+#   
+#   result = ldply(treatments,
+#                  function(treat) get_successes_up_to_each_generation_treatment(data,
+#                                                                                treat,
+#                                                                                max_gen))
+#   
+#   return(result)
+# }
 
 #####################################################################
 ## Functions for making plots
