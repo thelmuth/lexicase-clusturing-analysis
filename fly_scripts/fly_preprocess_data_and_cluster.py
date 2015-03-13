@@ -4,18 +4,18 @@ import os, stat
 # Settings
 number_runs = 100
 
-namespace = "syllables"
+namespace = "negative-to-zero"
 
 height = 20
 
 #selection = "lexicase"
-#selection = "tourney"
-selection = "ifs"
+selection = "tourney"
+#selection = "ifs"
 
 output_directory = "/home/thelmuth/Results/clustering-bench/" + namespace + "/"
 r_directory = "/home/thelmuth/lexicase-clusturing-analysis/fly_scripts/"
 
-title_string = "Preprocess Error Data; Find Numbers of Clusters | " + namespace + " | "
+title_string = "Preprocess; Find Clusters | " + namespace + " | "
 
 # Make selection experiments easier
 if selection == "lexicase":
