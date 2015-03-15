@@ -3,7 +3,7 @@ import os, stat, csv
 ##########################################################################
 # Settings
 
-namespace = "string-lengths-backwards"
+namespace = "double-letters"
 
 filename_prefix = "error_clustering_and_div"
 
