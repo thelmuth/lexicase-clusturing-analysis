@@ -3,7 +3,7 @@ import os, stat, csv
 ##########################################################################
 # Settings
 
-namespace = "double-letters"
+namespace = "checksum"
 
 filename_prefix = "error_clustering_and_div"
 

@@ -82,6 +82,28 @@ data_double_letters$succeeded = factor(data_double_letters$succeeded, levels = c
 data_double_letters$treatment = factor(data_double_letters$treatment, levels = c("lexicase", "tourney", "ifs"))
 ```
 
+### Scrabble Score
+
+```{r}
+data_scrabble_score_lexicase = import_from_error_clustering_and_div("../data/scrabble-score/lexicase/clustering/")
+data_scrabble_score_tourney = import_from_error_clustering_and_div("../data/scrabble-score/tourney/clustering/")
+data_scrabble_score_ifs = import_from_error_clustering_and_div("../data/scrabble-score/ifs/clustering/")
+data_scrabble_score = rbind(data_scrabble_score_lexicase, data_scrabble_score_tourney, data_scrabble_score_ifs)
+data_scrabble_score$succeeded = factor(data_scrabble_score$succeeded, levels = c(TRUE, FALSE))
+data_scrabble_score$treatment = factor(data_scrabble_score$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Checksum
+
+```{r}
+data_checksum_lexicase = import_from_error_clustering_and_div("../data/checksum/lexicase/clustering/")
+data_checksum_tourney = import_from_error_clustering_and_div("../data/checksum/tourney/clustering/")
+data_checksum_ifs = import_from_error_clustering_and_div("../data/checksum/ifs/clustering/")
+data_checksum = rbind(data_checksum_lexicase, data_checksum_tourney, data_checksum_ifs)
+data_checksum$succeeded = factor(data_checksum$succeeded, levels = c(TRUE, FALSE))
+data_checksum$treatment = factor(data_checksum$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
 # Scatterplots of Data
 
 It's often nice to see every point of every run, showing the trends and where densest areas occur.
@@ -125,6 +147,23 @@ plot_all_diversity_lines_faceted(data_double_letters)
 
 plot_all_clusters_lines_faceted(data_double_letters)
 ```
+
+## Scrabble Score
+
+```{r}
+plot_all_diversity_lines_faceted(data_scrabble_score)
+
+plot_all_clusters_lines_faceted(data_scrabble_score)
+```
+
+## Checksum
+
+```{r}
+plot_all_diversity_lines_faceted(data_checksum)
+
+plot_all_clusters_lines_faceted(data_checksum)
+```
+
 
 # Plot Medians and Quartiles
 
@@ -174,4 +213,20 @@ plot_cluster_count_medians_and_quartiles(data_negative_to_zero) + facet_grid(suc
 add_generational_success_counts_plot(data_double_letters, plot_diversity_medians_and_quartiles(data_double_letters))
 
 add_generational_success_counts_plot(data_double_letters, plot_cluster_count_medians_and_quartiles(data_double_letters))
+```
+
+## Scrabble Score
+
+```{r}
+add_generational_success_counts_plot(data_scrabble_score, plot_diversity_medians_and_quartiles(data_scrabble_score))
+
+add_generational_success_counts_plot(data_scrabble_score, plot_cluster_count_medians_and_quartiles(data_scrabble_score))
+```
+
+## Checksum
+
+```{r}
+add_generational_success_counts_plot(data_checksum, plot_diversity_medians_and_quartiles(data_checksum))
+
+add_generational_success_counts_plot(data_checksum, plot_cluster_count_medians_and_quartiles(data_checksum))
 ```
