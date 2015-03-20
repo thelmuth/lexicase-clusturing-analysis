@@ -3,7 +3,7 @@ import os, stat, csv
 ##########################################################################
 # Settings
 
-namespace = "checksum"
+namespace = "count-odds"
 
 filename_prefix = "error_clustering_and_div"
 

@@ -104,6 +104,17 @@ data_checksum$succeeded = factor(data_checksum$succeeded, levels = c(TRUE, FALSE
 data_checksum$treatment = factor(data_checksum$treatment, levels = c("lexicase", "tourney", "ifs"))
 ```
 
+### Count Odds
+
+```{r}
+data_count_odds_lexicase = import_from_error_clustering_and_div("../data/count-odds/lexicase/clustering/")
+data_count_odds_tourney = import_from_error_clustering_and_div("../data/count-odds/tourney/clustering/")
+data_count_odds_ifs = import_from_error_clustering_and_div("../data/count-odds/ifs/clustering/")
+data_count_odds = rbind(data_count_odds_lexicase, data_count_odds_tourney, data_count_odds_ifs)
+data_count_odds$succeeded = factor(data_count_odds$succeeded, levels = c(TRUE, FALSE))
+data_count_odds$treatment = factor(data_count_odds$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
 # Scatterplots of Data
 
 It's often nice to see every point of every run, showing the trends and where densest areas occur.
@@ -164,6 +175,14 @@ plot_all_diversity_lines_faceted(data_checksum)
 plot_all_clusters_lines_faceted(data_checksum)
 ```
 
+## Count Odds
+
+```{r}
+plot_all_diversity_lines_faceted(data_count_odds)
+
+plot_all_clusters_lines_faceted(data_count_odds)
+```
+
 
 # Plot Medians and Quartiles
 
@@ -213,6 +232,8 @@ plot_cluster_count_medians_and_quartiles(data_negative_to_zero) + facet_grid(suc
 add_generational_success_counts_plot(data_double_letters, plot_diversity_medians_and_quartiles(data_double_letters))
 
 add_generational_success_counts_plot(data_double_letters, plot_cluster_count_medians_and_quartiles(data_double_letters))
+
+plot_cluster_count_medians_and_quartiles(data_double_letters) + facet_grid(succeeded ~ ., labeller=label_both)
 ```
 
 ## Scrabble Score
@@ -229,4 +250,12 @@ add_generational_success_counts_plot(data_scrabble_score, plot_cluster_count_med
 add_generational_success_counts_plot(data_checksum, plot_diversity_medians_and_quartiles(data_checksum))
 
 add_generational_success_counts_plot(data_checksum, plot_cluster_count_medians_and_quartiles(data_checksum))
+```
+
+## Count Odds
+
+```{r}
+add_generational_success_counts_plot(data_count_odds, plot_diversity_medians_and_quartiles(data_count_odds))
+
+add_generational_success_counts_plot(data_count_odds, plot_cluster_count_medians_and_quartiles(data_count_odds))
 ```
