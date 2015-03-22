@@ -23,6 +23,8 @@ library("plyr")
 setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis/R_notebooks")
 
 source('../scripts/clustering.R')
+
+grayPalette3 <- c("#555555", "#000000", "#AAAAAA")
 ```
 
 ## Import Data
@@ -120,11 +122,13 @@ data_count_odds$treatment = factor(data_count_odds$treatment, levels = c("lexica
 
 # Plots diversity medians and quartiles of data. Takes optional quartiles_percent, which tells what percent of the center data to include
 plot_diversity_medians_and_quartiles <- function(data, quartiles_percent = 0.5, legend.pos = "right"){
-  p <- ggplot(data, aes(x=generation, y=error.diversity, color=treatment)) + 
-    stat_summary(fun.data="median_hilow", conf.int=quartiles_percent, alpha=0.5) +
+  p <- ggplot(data, aes(x=generation, y=error.diversity, shape=treatment, color=treatment)) + 
+    stat_summary(fun.data="median_hilow", conf.int=quartiles_percent) + #, alpha=0.5) +
+    #facet_grid(. ~ treatment, labeller=label_both) +
     theme_bw() +
-    ylim(c(0,1)) +
+    coord_cartesian(ylim = c(0,1)) +
     labs(y = "Error Diversity") +
+    scale_colour_manual(values = grayPalette3) +
     theme(legend.title=element_blank(), legend.justification=c(1,0.5), legend.position=legend.pos, legend.background = element_rect(colour="black", size=0.1), legend.key = element_blank()) # Make changes to legend
   
   return(p)
