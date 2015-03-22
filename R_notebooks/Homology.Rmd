@@ -1,0 +1,140 @@
+---
+title: "Homology data"
+author: "Nic McPhee and Thomas Helmuth"
+date: "22 March 2015"
+output: html_document
+---
+
+# **Important Note**
+
+The `checksum` and `replace-space-with-newline` data here is from the same runs we used for the 
+clustering and graph database work. The `negative-to-zero` and `string-length-backwards` data, however,
+is from a _different_ collection of runs of those problems because the homology data wasn't output
+for the clustering/graph DB runs for those problems.
+
+# Load the libraries and data:
+
+The reading/looping/binding code here assumes that this script is in our `R_notebooks` directory, and that that's the working directory. It then assumes the data is all in a `Homology_data` directory in `data`, with sub-directories for each problem, containing sub-directories for each treatment, each of which has a file `homology.csv` with the data for that problem and treatment.
+
+I've commented out all that reading/looping/binding code because it's slow to re-build that combined data frame every time, and we'll just save and load the result.
+
+```{r}
+library("ggplot2")
+
+# problem_names = c("checksum", "negative-to-zero", "replace-space-with-newline", "string-length-backwards")
+# treatments = c("ifs", "lexicase", "tourney")
+# 
+# homology_data = data.frame()
+# 
+# for (p in problem_names) {
+#   for (t in treatments) {
+#     csv_file = paste0("../data/Homology_data/", p, "/", t, "/homology.csv")
+#     data <- read.csv(csv_file)
+#     data$problem = p
+#     data$treatment = t
+#     homology_data = rbind(homology_data, data)
+#   }
+# }
+# 
+# write.csv(homology_data, "../data/Homology_data/all_homology_data.csv", row.names=FALSE)
+
+homology <- read.csv("../data/Homology_data/all_homology_data.csv")
+```
+
+# Plot just Run 6 of RSWN-lexicase
+
+We can plot the 25%, 50%, and 75% data for a single run just fine:
+
+```{r}
+ggplot(subset(homology, problem=="replace-space-with-newline" & treatment=="lexicase" & Run==6), 
+       aes(x=Generation, y=Homology, group=Quartile, color=factor(Quartile))) + 
+  geom_line()
+```
+
+# Plot all the RSWN-lexicase runs
+
+If we plot all the data with colors for the quartiles, it's just a muddy mess:
+
+```{r}
+ggplot(subset(homology, problem=="replace-space-with-newline" & treatment=="lexicase"), 
+       aes(x=Generation, y=Homology, group=interaction(Run, Quartile), color=factor(Quartile))) + 
+  geom_line(alpha=0.1)
+```
+
+If we split it out with factors, we find that they're really not all that different, although 
+(as we'd expect) the numbers get higher as you move from 25% to 75%.
+
+```{r}
+ggplot(subset(homology, problem=="replace-space-with-newline" & treatment=="lexicase"), 
+       aes(x=Generation, y=Homology, group=Run)) + 
+  geom_line(alpha=0.1) + 
+  facet_grid(. ~ Quartile)
+```
+
+Reading these plots is also complicated by (again) the fact that some runs end early, and it's hard to see when that's happening.
+
+# Plotting medians for all three treatments
+
+I tried several different plots, but everything tended towards the muddy mess, especially in black and 
+white. So I just used facetting throughout.
+
+## Checksum
+
+```{r}
+checksum_medians = subset(homology, problem=="checksum" & Quartile==0.5)
+
+ggplot(checksum_medians, aes(x=Generation, y=Homology, group=Run)) +
+  geom_line(alpha=0.1) +
+  facet_grid(treatment ~ .)
+```
+
+The lexicase homology numbers are definitely quite a lot higher, and remarkabley tightly grouped 
+throughout. (Lexicase isn't that tightly bunched in the other three problems.)
+IFS and tournament look pretty much the same. These results are pretty similar to the diversity
+plots, but don't tell us anything terribly useful about the lack of clustering.
+
+It's interesting that in both IFS and Tourney you can see collapses in homology
+(as nearly vertical lines) which probably represent moments where there's very strong convergence.
+Those would be interesting moments to try to explore in the Graph DB.
+
+## Negative-to-zero
+
+```{r}
+ntz_medians = subset(homology, problem=="negative-to-zero" & Quartile==0.5)
+
+ggplot(ntz_medians, aes(x=Generation, y=Homology, group=Run)) +
+  geom_line(alpha=0.1) +
+  facet_grid(treatment ~ .)
+```
+
+This one's _really_ interesting because of the clear split between high and low homology runs for both 
+IFS and Tourney, and for what appears to be some quantizing in both of those plots (horizontal lines with
+multiple runs having the same median homology). It would be very interesting to see if those "high
+homology" runs correspond to the few successes for IFS and Tourney.
+
+## Replace space with newline
+
+```{r}
+rswn_medians = subset(homology, problem=="replace-space-with-newline" & Quartile==0.5)
+
+ggplot(rswn_medians, aes(x=Generation, y=Homology, group=Run)) +
+  geom_line(alpha=0.1) +
+  facet_grid(treatment ~ .)
+```
+
+Again, both IFS and Tourney seem to split into "high" and "low" homology runs, with the high homology 
+runs looking a lot more like lexicase than the low.
+
+## String length backwards
+
+```{r}
+slb_medians = subset(homology, problem=="string-length-backwards" & Quartile==0.5)
+
+ggplot(slb_medians, aes(x=Generation, y=Homology, group=Run)) +
+  geom_line(alpha=0.1) +
+  facet_grid(treatment ~ .)
+```
+
+This one's arguably the most interesting for lexicase, as it has the most variation through the run. 
+Like `checksum` there appear to be some strong vertical drops in all three treatments that presumably 
+represent some sort of diversity collapse.
