@@ -10,7 +10,7 @@ transform_data_file_into_error_file <- function(file_path){
   
   data = data[,!(names(data) %in% columns_to_drop)]
   
-  write_path = paste0(dirname(file_path), "/", "errors_", basename(file_path))
+  write_path = paste(dirname(file_path), "/", "errors_", basename(file_path), sep="")
   
   write.csv(data, write_path, row.names = FALSE) 
 }
@@ -75,7 +75,9 @@ num_clusters_for_all_gens = function(data, height, normalization_fn){
 
 # Takes a generation of error vectors and finds the percent of distinct error vectors
 generation_error_diversity = function(gen_data){
-  return(nrow(unique(gen_data)) / nrow(gen_data))
+  result = nrow(unique(gen_data)) / nrow(gen_data)
+  print(sprintf("  Error Diversity is: %f", result))
+  return(result)
 }
 
 error_diversity = function(data){
