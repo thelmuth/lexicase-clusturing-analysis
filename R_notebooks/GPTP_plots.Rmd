@@ -137,6 +137,22 @@ plot_diversity_medians_and_quartiles <- function(data, quartiles_percent = 0.5, 
   return(p)
 }
 
+# Plots clusters medians and quartiles of data. Takes optional quartiles_percent, which tells what percent of the center data to include
+plot_cluster_count_medians_and_quartiles <- function(data, quartiles_percent = 0.5, legend.pos = "right"){            
+
+  p <- ggplot(data, aes(x=generation, y=cluster.count, color=treatment, fill=treatment, shape = treatment)) + 
+    stat_summary(fun.data="median_hilow", conf.int=quartiles_percent, geom = "smooth", size=1) +
+    stat_summary(data=subset(data, generation %% 30 == 15), fun.y = median, geom="point", size = shape_size) +
+    theme_bw() +
+    labs(y = "Cluster Count") +
+    scale_colour_manual(values = grayPalette3) +
+    scale_fill_manual(values = grayPalette3) +
+    theme(legend.title=element_blank(), legend.justification=c(1,0.5), legend.position=legend.pos, legend.background = element_rect(colour="black", size=0.1), legend.key = element_blank()) # Make changes to legend
+  
+  return(p)
+}
+
+
 # Makes a plot giving the number of successes at or before each generation
 plot_generational_success_counts <- function(data){
   success_counts = get_generational_success_counts(data)
@@ -171,7 +187,7 @@ rswn_mq <- plot_diversity_medians_and_quartiles(data_rswn, legend.pos = c(1, 0.5
 
 add_generational_success_counts_plot(data_rswn, rswn_mq)
 
-#add_generational_success_counts_plot(data_rswn, plot_cluster_count_medians_and_quartiles(data_rswn))
+add_generational_success_counts_plot(data_rswn, plot_cluster_count_medians_and_quartiles(data_rswn, legend.pos = c(.2, 0.8)))
 ```
 
 ## Syllables
@@ -181,5 +197,5 @@ syllables_mq <- plot_diversity_medians_and_quartiles(data_syllables, legend.pos 
 
 add_generational_success_counts_plot(data_syllables, syllables_mq)
 
-#add_generational_success_counts_plot(data_syllables, plot_cluster_count_medians_and_quartiles(data_syllables))
+add_generational_success_counts_plot(data_syllables, plot_cluster_count_medians_and_quartiles(data_syllables, legend.pos = c(1, 0.5)))
 ```
