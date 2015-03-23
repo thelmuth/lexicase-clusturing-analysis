@@ -1,15 +1,17 @@
 ---
-title: "Homology data"
+title: "Levenshtein distance data"
 author: "Nic McPhee and Thomas Helmuth"
 date: "22 March 2015"
-output: html_document
+output: 
+  html_document:
+    toc: true
 ---
 
 # **Important Note**
 
 The `checksum` and `replace-space-with-newline` data here is from the same runs we used for the 
 clustering and graph database work. The `negative-to-zero` and `string-length-backwards` data, however,
-is from a _different_ collection of runs of those problems because the homology data wasn't output
+is from a _different_ collection of runs of those problems because the Levenshtein distance data wasn't output
 for the clustering/graph DB runs for those problems.
 
 # Load the libraries and data:
@@ -20,11 +22,12 @@ I've commented out all that reading/looping/binding code because it's slow to re
 
 ```{r}
 library("ggplot2")
+library(data.table)
 
 # problem_names = c("checksum", "negative-to-zero", "replace-space-with-newline", "string-length-backwards")
 # treatments = c("ifs", "lexicase", "tourney")
 # 
-# homology_data = data.frame()
+# lev_dist_data = data.frame()
 # 
 # for (p in problem_names) {
 #   for (t in treatments) {
@@ -32,13 +35,14 @@ library("ggplot2")
 #     data <- read.csv(csv_file)
 #     data$problem = p
 #     data$treatment = t
-#     homology_data = rbind(homology_data, data)
+#     lev_dist_data = rbind(lev_dist_data, data)
 #   }
 # }
 # 
-# write.csv(homology_data, "../data/Homology_data/all_homology_data.csv", row.names=FALSE)
+# write.csv(lev_dist_data, "../data/Homology_data/all_lev_dist_data.csv", row.names=FALSE)
 
-homology <- read.csv("../data/Homology_data/all_homology_data.csv")
+lev_dist_data <- read.csv("../data/Homology_data/all_lev_dist_data.csv")
+setnames(lev_dist_data, "Homology", "Levenshtein_dist")
 ```
 
 # Plot just Run 6 of RSWN-lexicase
@@ -46,8 +50,8 @@ homology <- read.csv("../data/Homology_data/all_homology_data.csv")
 We can plot the 25%, 50%, and 75% data for a single run just fine:
 
 ```{r}
-ggplot(subset(homology, problem=="replace-space-with-newline" & treatment=="lexicase" & Run==6), 
-       aes(x=Generation, y=Homology, group=Quartile, color=factor(Quartile))) + 
+ggplot(subset(lev_dist_data, problem=="replace-space-with-newline" & treatment=="lexicase" & Run==6), 
+       aes(x=Generation, y=Levenshtein_dist, group=Quartile, color=factor(Quartile))) + 
   geom_line()
 ```
 
@@ -56,8 +60,8 @@ ggplot(subset(homology, problem=="replace-space-with-newline" & treatment=="lexi
 If we plot all the data with colors for the quartiles, it's just a muddy mess:
 
 ```{r}
-ggplot(subset(homology, problem=="replace-space-with-newline" & treatment=="lexicase"), 
-       aes(x=Generation, y=Homology, group=interaction(Run, Quartile), color=factor(Quartile))) + 
+ggplot(subset(lev_dist_data, problem=="replace-space-with-newline" & treatment=="lexicase"), 
+       aes(x=Generation, y=Levenshtein_dist, group=interaction(Run, Quartile), color=factor(Quartile))) + 
   geom_line(alpha=0.1)
 ```
 
@@ -65,8 +69,8 @@ If we split it out with factors, we find that they're really not all that differ
 (as we'd expect) the numbers get higher as you move from 25% to 75%.
 
 ```{r}
-ggplot(subset(homology, problem=="replace-space-with-newline" & treatment=="lexicase"), 
-       aes(x=Generation, y=Homology, group=Run)) + 
+ggplot(subset(lev_dist_data, problem=="replace-space-with-newline" & treatment=="lexicase"), 
+       aes(x=Generation, y=Levenshtein_dist, group=Run)) + 
   geom_line(alpha=0.1) + 
   facet_grid(. ~ Quartile)
 ```
@@ -81,56 +85,57 @@ white. So I just used facetting throughout.
 ## Checksum
 
 ```{r}
-checksum_medians = subset(homology, problem=="checksum" & Quartile==0.5)
+checksum_medians = subset(lev_dist_data, problem=="checksum" & Quartile==0.5)
 
-ggplot(checksum_medians, aes(x=Generation, y=Homology, group=Run)) +
+ggplot(checksum_medians, aes(x=Generation, y=Levenshtein_dist, group=Run)) +
   geom_line(alpha=0.1) +
   facet_grid(treatment ~ .)
 ```
 
-The lexicase homology numbers are definitely quite a lot higher, and remarkabley tightly grouped 
+The lexicase Levenshtein distance numbers are definitely quite a lot higher, and remarkabley tightly grouped 
 throughout. (Lexicase isn't that tightly bunched in the other three problems.)
 IFS and tournament look pretty much the same. These results are pretty similar to the diversity
 plots, but don't tell us anything terribly useful about the lack of clustering.
 
-It's interesting that in both IFS and Tourney you can see collapses in homology
+It's interesting that in both IFS and Tourney you can see collapses in Levenshtein distance
 (as nearly vertical lines) which probably represent moments where there's very strong convergence.
 Those would be interesting moments to try to explore in the Graph DB.
 
 ## Negative-to-zero
 
 ```{r}
-ntz_medians = subset(homology, problem=="negative-to-zero" & Quartile==0.5)
+ntz_medians = subset(lev_dist_data, problem=="negative-to-zero" & Quartile==0.5)
 
-ggplot(ntz_medians, aes(x=Generation, y=Homology, group=Run)) +
+ggplot(ntz_medians, aes(x=Generation, y=Levenshtein_dist, group=Run)) +
   geom_line(alpha=0.1) +
   facet_grid(treatment ~ .)
 ```
 
-This one's _really_ interesting because of the clear split between high and low homology runs for both 
+This one's _really_ interesting because of the clear split between high and low Levenshtein distance
+runs for both 
 IFS and Tourney, and for what appears to be some quantizing in both of those plots (horizontal lines with
-multiple runs having the same median homology). It would be very interesting to see if those "high
-homology" runs correspond to the few successes for IFS and Tourney.
+multiple runs having the same median Levenshtein distance). It would be very interesting to see if 
+those "high Levenshtein distance" runs correspond to the few successes for IFS and Tourney.
 
 ## Replace space with newline
 
 ```{r}
-rswn_medians = subset(homology, problem=="replace-space-with-newline" & Quartile==0.5)
+rswn_medians = subset(lev_dist_data, problem=="replace-space-with-newline" & Quartile==0.5)
 
-ggplot(rswn_medians, aes(x=Generation, y=Homology, group=Run)) +
+ggplot(rswn_medians, aes(x=Generation, y=Levenshtein_dist, group=Run)) +
   geom_line(alpha=0.1) +
   facet_grid(treatment ~ .)
 ```
 
-Again, both IFS and Tourney seem to split into "high" and "low" homology runs, with the high homology 
+Again, both IFS and Tourney seem to split into "high" and "low" Levenshtein distance runs, with the high Levenshtein distance 
 runs looking a lot more like lexicase than the low.
 
 ## String length backwards
 
 ```{r}
-slb_medians = subset(homology, problem=="string-length-backwards" & Quartile==0.5)
+slb_medians = subset(lev_dist_data, problem=="string-length-backwards" & Quartile==0.5)
 
-ggplot(slb_medians, aes(x=Generation, y=Homology, group=Run)) +
+ggplot(slb_medians, aes(x=Generation, y=Levenshtein_dist, group=Run)) +
   geom_line(alpha=0.1) +
   facet_grid(treatment ~ .)
 ```
