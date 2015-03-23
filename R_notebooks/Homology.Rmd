@@ -143,3 +143,59 @@ ggplot(slb_medians, aes(x=Generation, y=Levenshtein_dist, group=Run)) +
 This one's arguably the most interesting for lexicase, as it has the most variation through the run. 
 Like `checksum` there appear to be some strong vertical drops in all three treatments that presumably 
 represent some sort of diversity collapse.
+
+# Trying to better understand the sharp changes when using non-lexicase selection
+
+We know that with lexicase selection there can be _very_ sharp changes in a population's diversity 
+because lexicase can select the same individual nearly all the time to be a parent for the next generation.
+With tournament selection, however, a single individual is unlikely to be selected terribly often because
+the tournament size limits the number of opportunities it has.
+
+So I fished up a tournament selection `negative-to-zero` run that has some sharp changes. This is the plot of the median Levenshtein distance over time, and there are two very strong drops, i.e., two sharp losses of diversity.
+
+```{r}
+ggplot(subset(ntz_medians, Run==2 & treatment=="tourney"),
+       aes(x=Generation, y=Levenshtein_dist)) +
+  geom_line()
+```
+
+Let's replot these with limited numbers of generations so we can see how steep the drops really are:
+
+```{r}
+ggplot(subset(ntz_medians, Run==2 & treatment=="tourney"),
+       aes(x=Generation, y=Levenshtein_dist)) +
+  geom_line() +
+  coord_cartesian(xlim = c(9, 20))
+
+ggplot(subset(ntz_medians, Run==2 & treatment=="tourney"),
+       aes(x=Generation, y=Levenshtein_dist)) +
+  geom_line() +
+  coord_cartesian(xlim = c(125, 132))
+```
+
+There are two pretty substantial drops in median Levenshtein distance, once between generations 11 and 12
+(from 0.93 to 0.60), and an even bigger drop later between generations 127 and 128 (from 0.71 to 0.13).
+
+One question is what the other two quartiles look like in this run:
+```{r}
+ggplot(subset(lev_dist_data, problem=="negative-to-zero" & Run==2 & treatment=="tourney"),
+       aes(x=Generation, y=Levenshtein_dist, color=Quartile, group=Quartile)) +
+  geom_line()
+```
+
+All three are really steep at the end, although the steepness in the first drop seems to lessen as we
+move from the 25% quartile through the median to the 75% quartile. 
+
+If we zoom in on the later drop, 
+though, we can see that the 25% quartile starts to drop earlier and more strongly than the other two. 
+This suggests that there was an accumulation of very similar individuals around some new "discovery"
+that started in generation 126 (maybe even 125 -- we don't have information on the bottom of the 
+smallest quartile), which gathers momentum through to the large drop ending at generation 128:
+
+```{r}
+ggplot(subset(lev_dist_data, problem=="negative-to-zero" & Run==2 & treatment=="tourney"),
+       aes(x=Generation, y=Levenshtein_dist, color=Quartile, group=Quartile)) +
+  geom_line() +
+  coord_cartesian(xlim = c(125, 132))
+```
+
