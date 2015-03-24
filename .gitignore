@@ -15,5 +15,6 @@
 *.Rproj
 
 # Ignore all our data files so they don't get committed.
-data
+data/
+img/
 R_notebooks/*.html
