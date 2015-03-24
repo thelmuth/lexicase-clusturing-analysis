@@ -1,0 +1,201 @@
+---
+title: "Levenshtein distance data"
+author: "Nic McPhee and Thomas Helmuth"
+date: "22 March 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+# **Important Note**
+
+The `checksum` and `replace-space-with-newline` data here is from the same runs we used for the 
+clustering and graph database work. The `negative-to-zero` and `string-length-backwards` data, however,
+is from a _different_ collection of runs of those problems because the Levenshtein distance data wasn't output
+for the clustering/graph DB runs for those problems.
+
+# Load the libraries and data:
+
+The reading/looping/binding code here assumes that this script is in our `R_notebooks` directory, and that that's the working directory. It then assumes the data is all in a `Homology_data` directory in `data`, with sub-directories for each problem, containing sub-directories for each treatment, each of which has a file `homology.csv` with the data for that problem and treatment.
+
+I've commented out all that reading/looping/binding code because it's slow to re-build that combined data frame every time, and we'll just save and load the result.
+
+```{r}
+library("ggplot2")
+library(data.table)
+
+# problem_names = c("checksum", "negative-to-zero", "replace-space-with-newline", "string-length-backwards")
+# treatments = c("ifs", "lexicase", "tourney")
+# 
+# lev_dist_data = data.frame()
+# 
+# for (p in problem_names) {
+#   for (t in treatments) {
+#     csv_file = paste0("../data/Homology_data/", p, "/", t, "/homology.csv")
+#     data <- read.csv(csv_file)
+#     data$problem = p
+#     data$treatment = t
+#     lev_dist_data = rbind(lev_dist_data, data)
+#   }
+# }
+# 
+# write.csv(lev_dist_data, "../data/Homology_data/all_lev_dist_data.csv", row.names=FALSE)
+
+lev_dist_data <- read.csv("../data/Homology_data/all_lev_dist_data.csv")
+setnames(lev_dist_data, "Homology", "Levenshtein_dist")
+```
+
+# Plot just Run 6 of RSWN-lexicase
+
+We can plot the 25%, 50%, and 75% data for a single run just fine:
+
+```{r}
+ggplot(subset(lev_dist_data, problem=="replace-space-with-newline" & treatment=="lexicase" & Run==6), 
+       aes(x=Generation, y=Levenshtein_dist, group=Quartile, color=factor(Quartile))) + 
+  geom_line()
+```
+
+# Plot all the RSWN-lexicase runs
+
+If we plot all the data with colors for the quartiles, it's just a muddy mess:
+
+```{r}
+ggplot(subset(lev_dist_data, problem=="replace-space-with-newline" & treatment=="lexicase"), 
+       aes(x=Generation, y=Levenshtein_dist, group=interaction(Run, Quartile), color=factor(Quartile))) + 
+  geom_line(alpha=0.1)
+```
+
+If we split it out with factors, we find that they're really not all that different, although 
+(as we'd expect) the numbers get higher as you move from 25% to 75%.
+
+```{r}
+ggplot(subset(lev_dist_data, problem=="replace-space-with-newline" & treatment=="lexicase"), 
+       aes(x=Generation, y=Levenshtein_dist, group=Run)) + 
+  geom_line(alpha=0.1) + 
+  facet_grid(. ~ Quartile)
+```
+
+Reading these plots is also complicated by (again) the fact that some runs end early, and it's hard to see when that's happening.
+
+# Plotting medians for all three treatments
+
+I tried several different plots, but everything tended towards the muddy mess, especially in black and 
+white. So I just used facetting throughout.
+
+## Checksum
+
+```{r}
+checksum_medians = subset(lev_dist_data, problem=="checksum" & Quartile==0.5)
+
+ggplot(checksum_medians, aes(x=Generation, y=Levenshtein_dist, group=Run)) +
+  geom_line(alpha=0.1) +
+  facet_grid(treatment ~ .)
+```
+
+The lexicase Levenshtein distance numbers are definitely quite a lot higher, and remarkabley tightly grouped 
+throughout. (Lexicase isn't that tightly bunched in the other three problems.)
+IFS and tournament look pretty much the same. These results are pretty similar to the diversity
+plots, but don't tell us anything terribly useful about the lack of clustering.
+
+It's interesting that in both IFS and Tourney you can see collapses in Levenshtein distance
+(as nearly vertical lines) which probably represent moments where there's very strong convergence.
+Those would be interesting moments to try to explore in the Graph DB.
+
+## Negative-to-zero
+
+```{r}
+ntz_medians = subset(lev_dist_data, problem=="negative-to-zero" & Quartile==0.5)
+
+ggplot(ntz_medians, aes(x=Generation, y=Levenshtein_dist, group=Run)) +
+  geom_line(alpha=0.1) +
+  facet_grid(treatment ~ .)
+```
+
+This one's _really_ interesting because of the clear split between high and low Levenshtein distance
+runs for both 
+IFS and Tourney, and for what appears to be some quantizing in both of those plots (horizontal lines with
+multiple runs having the same median Levenshtein distance). It would be very interesting to see if 
+those "high Levenshtein distance" runs correspond to the few successes for IFS and Tourney.
+
+## Replace space with newline
+
+```{r}
+rswn_medians = subset(lev_dist_data, problem=="replace-space-with-newline" & Quartile==0.5)
+
+ggplot(rswn_medians, aes(x=Generation, y=Levenshtein_dist, group=Run)) +
+  geom_line(alpha=0.1) +
+  facet_grid(treatment ~ .)
+```
+
+Again, both IFS and Tourney seem to split into "high" and "low" Levenshtein distance runs, with the high Levenshtein distance 
+runs looking a lot more like lexicase than the low.
+
+## String length backwards
+
+```{r}
+slb_medians = subset(lev_dist_data, problem=="string-length-backwards" & Quartile==0.5)
+
+ggplot(slb_medians, aes(x=Generation, y=Levenshtein_dist, group=Run)) +
+  geom_line(alpha=0.1) +
+  facet_grid(treatment ~ .)
+```
+
+This one's arguably the most interesting for lexicase, as it has the most variation through the run. 
+Like `checksum` there appear to be some strong vertical drops in all three treatments that presumably 
+represent some sort of diversity collapse.
+
+# Trying to better understand the sharp changes when using non-lexicase selection
+
+We know that with lexicase selection there can be _very_ sharp changes in a population's diversity 
+because lexicase can select the same individual nearly all the time to be a parent for the next generation.
+With tournament selection, however, a single individual is unlikely to be selected terribly often because
+the tournament size limits the number of opportunities it has.
+
+So I fished up a tournament selection `negative-to-zero` run that has some sharp changes. This is the plot of the median Levenshtein distance over time, and there are two very strong drops, i.e., two sharp losses of diversity.
+
+```{r}
+ggplot(subset(ntz_medians, Run==2 & treatment=="tourney"),
+       aes(x=Generation, y=Levenshtein_dist)) +
+  geom_line()
+```
+
+Let's replot these with limited numbers of generations so we can see how steep the drops really are:
+
+```{r}
+ggplot(subset(ntz_medians, Run==2 & treatment=="tourney"),
+       aes(x=Generation, y=Levenshtein_dist)) +
+  geom_line() +
+  coord_cartesian(xlim = c(9, 20))
+
+ggplot(subset(ntz_medians, Run==2 & treatment=="tourney"),
+       aes(x=Generation, y=Levenshtein_dist)) +
+  geom_line() +
+  coord_cartesian(xlim = c(125, 132))
+```
+
+There are two pretty substantial drops in median Levenshtein distance, once between generations 11 and 12
+(from 0.93 to 0.60), and an even bigger drop later between generations 127 and 128 (from 0.71 to 0.13).
+
+One question is what the other two quartiles look like in this run:
+```{r}
+ggplot(subset(lev_dist_data, problem=="negative-to-zero" & Run==2 & treatment=="tourney"),
+       aes(x=Generation, y=Levenshtein_dist, color=Quartile, group=Quartile)) +
+  geom_line()
+```
+
+All three are really steep at the end, although the steepness in the first drop seems to lessen as we
+move from the 25% quartile through the median to the 75% quartile. 
+
+If we zoom in on the later drop, 
+though, we can see that the 25% quartile starts to drop earlier and more strongly than the other two. 
+This suggests that there was an accumulation of very similar individuals around some new "discovery"
+that started in generation 126 (maybe even 125 -- we don't have information on the bottom of the 
+smallest quartile), which gathers momentum through to the large drop ending at generation 128:
+
+```{r}
+ggplot(subset(lev_dist_data, problem=="negative-to-zero" & Run==2 & treatment=="tourney"),
+       aes(x=Generation, y=Levenshtein_dist, color=Quartile, group=Quartile)) +
+  geom_line() +
+  coord_cartesian(xlim = c(125, 132))
+```
+
