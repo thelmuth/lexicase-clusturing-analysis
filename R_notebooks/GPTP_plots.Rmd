@@ -19,6 +19,7 @@ library('cluster')
 library('Hmisc')
 library("gridExtra")
 library("plyr")
+library("reshape")
 
 setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis/R_notebooks")
 
@@ -119,6 +120,7 @@ data_count_odds$treatment = factor(data_count_odds$treatment, levels = c("lexica
 ```
 
 # Modify Some Functions for Publication Plots
+
 ```{r}
 shape_size <- 4
 
@@ -255,4 +257,27 @@ add_generational_success_counts_plot(data_checksum, plot_cluster_count_medians_a
 add_generational_success_counts_plot(data_count_odds, plot_diversity_medians_and_quartiles(data_count_odds, legend.pos = c(1, 0.2)))
 
 add_generational_success_counts_plot(data_count_odds, plot_cluster_count_medians_and_quartiles(data_count_odds, legend.pos = c(1, 0.36)))
+```
+
+# Plot confidence intervals of differences
+
+```{r}
+wilcox_ci <- function (data, gen, first_treatment, second_treatment, value, confidence.level = 0.95) {
+  gen_data = subset(data, generation==gen)
+  first_data = subset(gen_data, treatment == first_treatment)
+  second_data = subset(gen_data, treatment == second_treatment)
+  wt <- wilcox.test(first_data[[value]],
+                    second_data[[value]], 
+                    conf.int=TRUE,
+                    conf.level=confidence.level)
+  return(wt$conf.int)
+}
+```
+
+```{r}
+ggplot(melt(sapply(seq(0, 300), function (gen) wilcox_ci(data_rswn, gen, 'lexicase', 'tourney', 'error.diversity'))), aes(x = X2 - 1, y=value, group=X1)) +
+  geom_line()
+
+ggplot(melt(sapply(seq(0, 300), function (gen) wilcox_ci(data_rswn, gen, 'lexicase', 'tourney', 'cluster.count'))), aes(x = X2 - 1, y=value, group=X1)) +
+  geom_line()
 ```
