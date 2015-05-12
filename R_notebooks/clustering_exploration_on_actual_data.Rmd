@@ -7,178 +7,82 @@ output:
     toc: true
 ---
 
+**It turns out that when an R-Markdown file is "knitted" the working directory is set to be the directory containing the markdown file. Hence I needed the `../` in the `source` call here, and in the `read.csv` calls later on.**
+
 ```{r, message=FALSE}
 library('ggplot2')
 library('cluster')
 library('apcluster')
+
+source('../scripts/clustering.R')
 ```
 
 # Import the data
 
+This is run once to transform the data file into an errors-only file. It reads a file like `.../data1.csv` and writes out a file `.../errors_data1.csv` with just the errors.
+
 ```{r}
-# setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis")
+# transform_data_file_into_error_file("data/RSWN/lexicase/data1.csv")
+# transform_data_file_into_error_file("data/RSWN/lexicase/data6.csv")
+```
+
+# Calculate the number of clusters and error diversity
+
+Take the one of the simplified error files generated above, and generate a data frame containing the cluster counts for each generation, as well as the error diversity for each generation. The error diversity is the number of distinct error vectors (distinct semantic outputs) divided by the population size.
+
+```{r}
+# This is slow, so it's commented out.
+
+# data_frame1 = make_frame_from_errors_file(
+#   "data/RSWN/lexicase/errors_data1.csv", 1, 
+#   "replace-space-with-newline", "lexicase", 20, elitize_generation_data)
 # 
-# data1 <- read.csv("data/RSWN/lexicase/data1.csv")
-# 
-# columns_to_drop = c("uuid", "parent.uuids", "genetic.operators", "push.program.size", "plush.genome.size", "push.program", "plush.genome", "total.error")
-# 
-# data1 = data1[,!(names(data1) %in% columns_to_drop)]
-# 
-#write.csv(data1, "data/RSWN/lexicase/errors1.csv", row.names = FALSE)
+# data_frame6 = make_frame_from_errors_file(
+#   "data/RSWN/lexicase/errors_data6.csv", 6, 
+#   "replace-space-with-newline", "lexicase", 20, elitize_generation_data)
 ```
 
-Now, read errors data.
+Write out the results into CSV files so we don't have to recompute all this over and over.
 
 ```{r}
-#errors1 <- read.csv("data/RSWN/lexicase/errors1.csv")
+# write.csv(data_frame1, "data/RSWN/lexicase/error_counts_and_div1.csv")
+# write.csv(data_frame6, "data/RSWN/lexicase/error_counts_and_div6.csv")
 ```
 
-
-# Calculate the number of clusters in a generation
-
-Make some helper functions.
+Now read the data in from the newly generated CSV files, and `rbind` them into a single frame.
 
 ```{r}
-# Takes error data (including generation and location columns) and a generation, and 
-extract_clustering_data = function(data, gen){
-  
-  print(sprintf("Generation %i", gen))
-  
-  this_gen_data = subset(data, generation == gen)
-  
-  columns_to_drop = c("generation", "location")
-  right_rows = this_gen_data[,!(names(this_gen_data) %in% columns_to_drop)]
-  
-  return(right_rows)
-}
+data_frame1 = read.csv("../data/RSWN/lexicase/error_counts_and_div1.csv")
+data_frame6 = read.csv("../data/RSWN/lexicase/error_counts_and_div6.csv")
 
-elitize_generation_data = function(gen_data){
-  # Note: 0 means not elite, 1 means elite
-  
-  result <- gen_data
-  for (i in 1:length(gen_data)) {
-    result[i] <- ifelse(gen_data[i] == min(gen_data[i]), 1, 0)
-    }
-  
-  return(result)
-}
-
-pass_fail_generation_data = function(gen_data){
-  # Note: 0 means fail, 1 means pass
-  return(ifelse(gen_data == 0, 1, 0))
-}
-
-count_clusters = function(clustering_data, height) {
-  agnes_results <- agnes(clustering_data, metric = "manhattan")
-  num_clusters <- sum(agnes_results$height>height) + 1
-  
-  #plot(agnes_results, which.plots=2)
-  
-  print(sprintf("  Number of clusters is: %i", num_clusters))
-  
-  return(num_clusters)
-}
-
-num_clusters_for_all_gens = function(data, height, normalization_fn){
-  num_gens = max(data$generation)
-  num_clusters <- sapply(seq(0, num_gens),
-                         function(gen){
-                           count_clusters(normalization_fn(extract_clustering_data(data, gen)),
-                                          height)
-                           }
-                         )
-  
-  return(num_clusters)
-}
+both <- rbind(data_frame1, data_frame6)
 ```
 
-Get the count of the number of clusters per generation. Took about 4 minutes for this dataset with 129 generations.
+# Make some plots already!
+
+This plots both the cluster counts and diversity for these two runs. I've just scaled the cluster count by the population size so both plots are on the same y-axis scale.
 
 ```{r}
-# This is slow
-# cluster_count1 <- num_clusters_for_all_gens(errors1, 20, elitize_generation_data)
-
-# The result is the same as this, for errors1, height 20
-cluster_count1 = c(5,7,11,11,11,13,15,15,27,29,42,41,40,49,46,33,28,31,34,31,27,30,31,31,27,23,20,27,24,29,20,21,26,23,23,22,23,21,20,29,23,21,17,20,25,23,24,23,27,24,16,27,22,25,19,22,28,20,23,22,22,22,23,20,23,27,25,25,23,26,19,28,24,23,29,24,22,25,21,21,18,21,20,23,21,20,23,22,24,28,34,28,27,25,29,26,26,20,23,25,28,25,30,26,23,26,34,29,25,21,29,29,25,30,31,22,39,34,33,35,30,27,23,18,29,27,24,26,22,17)
-
-plot(cluster_count1)
+ggplot(both, aes(x=generation)) + 
+  geom_line(aes(y=error.diversity, color=interaction(" Diversity", run.num))) + 
+  geom_line(aes(y=cluster.count/1000, color=interaction("# clusters", run.num))) + 
+  labs(y="% of population", color="")
 ```
 
-# Import data6
-
-Let's do the same as above, but for data6
+Alternatively, we could use fewer colors and rely on the vertical distance to separate the number of clusters from the diversity values.
 
 ```{r}
-# setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis")
-# 
-# data6 <- read.csv("data/RSWN/lexicase/data6.csv")
-# 
-# columns_to_drop = c("uuid", "parent.uuids", "genetic.operators", "push.program.size", "plush.genome.size", "push.program", "plush.genome", "total.error")
-# 
-# data6 = data6[,!(names(data6) %in% columns_to_drop)]
-# 
-# write.csv(data6, "data/RSWN/lexicase/errors6.csv", row.names = FALSE)
+ggplot(both, aes(x=generation, color=factor(run.num))) + 
+  geom_line(aes(y=error.diversity)) + 
+  geom_line(aes(y=cluster.count/1000)) + 
+  labs(y="% of population", color="Run #")
 ```
 
-Now, read errors data.
+We an use `geom_smooth()` instead of `geom_line()`, but that washes out way too much of the differences and detail. One thing we totally lose here, for example, is the fact that some runs end before others.
 
 ```{r}
-#errors6 <- read.csv("data/RSWN/lexicase/errors6.csv")
+ggplot(both, aes(x=generation)) + 
+  geom_smooth(aes(y=error.diversity, color=" Diversity")) + 
+  geom_smooth(aes(y=cluster.count/1000, color="# clusters")) + 
+  labs(y="% of population", color="")
 ```
-
-And get the clusters info:
-
-```{r}
-data6_clustering = c()
-
-# data6_clustering$count_at_height20 <- num_clusters_for_all_gens(errors6, 20, elitize_generation_data)
-# paste(data6_clustering$count_at_height20, collapse = ',')
-
-data6_clustering$count_at_height20 = c(7,8,6,8,11,20,28,32,30,53,73,93,92,98,102,108,113,119,107,106,119,114,115,130,122,127,132,133,135,132,159,140,148,148,139,140,145,145,135,159,148,124,118,106,72,62,53,60,47,56,57,47,46,57,61,57,59,54,58,51,52,50,58,57,58,64,58,51,59,65,60,60,61,70,67,60,56,47,64,66,61,69,92,88,62,69,83,60)
-
-plot(data6_clustering$count_at_height20)
-```
-
-Let's try looking at the dendrograms of data6 at different generations:
-
-```{r}
-# plot(agnes(elitize_generation_data(extract_clustering_data(errors6, 40)), metric = "manhattan"), which.plots=2)
-# 
-# plot(agnes(elitize_generation_data(extract_clustering_data(errors6, 50)), metric = "manhattan"), which.plots=2)
-```
-
-These make me think that trying the cluster graph with `height = 40` might prove interesting.
-
-```{r}
-#data6_clustering$count_at_height40 <- num_clusters_for_all_gens(errors6, 40, elitize_generation_data)
-#paste(data6_clustering$count_at_height40, collapse = ',')
-
-data6_clustering$count_at_height40 = c(2,2,2,2,2,4,5,6,3,4,9,9,13,16,11,14,15,14,13,10,10,7,8,12,8,13,13,12,11,11,9,9,9,12,13,11,13,11,14,18,19,17,20,22,18,12,8,15,8,10,11,10,10,9,10,10,10,8,8,7,9,6,11,12,13,11,9,7,12,11,11,9,10,13,10,11,9,8,15,15,10,10,21,18,15,14,22,22)
-
-plot(data6_clustering$count_at_height40)
-```
-
-Huh, smaller, but not as interesting!
-
-# Different Binarization: Pass/Fail
-
-Let's now try the same thing, except use pass/fail instead of elite/not-elite.
-
-```{r}
-data6_clustering_pf = c()
-
-#data6_clustering_pf$count_at_height20 <- num_clusters_for_all_gens(errors6, 20, pass_fail_generation_data)
-#paste(data6_clustering_pf$count_at_height20, collapse = ',')
-
-data6_clustering_pf$count_at_height20 = c(3,5,5,6,9,12,13,15,23,40,53,65,72,71,76,88,78,91,81,80,91,95,98,109,105,106,108,105,113,108,130,121,124,121,110,116,120,127,117,135,120,101,95,84,50,44,37,41,31,41,42,36,36,44,47,47,46,43,47,43,45,42,37,43,54,61,54,41,55,63,61,55,59,67,64,58,55,44,61,65,59,59,85,78,62,69,83,60)
-
-plot(data6_clustering_pf$count_at_height20)
-```
-
-Even though it's above, here's the elite/not-elite graph again for easy comparison:
-
-```{r}
-plot(data6_clustering$count_at_height20)
-```
-
-While the differences aren't major, I'm surprised to see that there are differences throughout the run, not just at the start. This means that late in run there are test cases that no individual gets perfect. Also, while this might indicate we could just go with pass/fail for its simplicity, this might not hold for other runs/problems, especially problems where it's very difficult to get the right output (such as a complicated string). I would recommend sticking with eliteness.

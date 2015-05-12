@@ -1,0 +1,261 @@
+---
+title: "Clustering Runs 2"
+author: "Tom Helmuth"
+date: "March 10, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+# Introduction
+
+The goal of this document is to consolidate some of the most useful plots we've made using the clustering and diversity data.
+
+## Setup Code
+
+```{r, message=FALSE}
+library('ggplot2')
+library('cluster')
+library('Hmisc')
+library("gridExtra")
+library("plyr")
+
+setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis/R_notebooks")
+
+source('../scripts/clustering.R')
+```
+
+## Import Data
+
+### Replace Space With Newline
+
+```{r}
+data_rswn_lexicase = import_from_error_clustering_and_div("../data/RSWN/lexicase/clustering/")
+data_rswn_tourney = import_from_error_clustering_and_div("../data/RSWN/tourney/clustering/")
+data_rswn_ifs = import_from_error_clustering_and_div("../data/RSWN/ifs/clustering/")
+data_rswn = rbind(data_rswn_lexicase, data_rswn_tourney, data_rswn_ifs)
+data_rswn$succeeded = factor(data_rswn$succeeded, levels = c(TRUE, FALSE))
+data_rswn$treatment = factor(data_rswn$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Syllables
+
+```{r}
+data_syllables_lexicase = import_from_error_clustering_and_div("../data/syllables/lexicase/clustering/")
+data_syllables_tourney = import_from_error_clustering_and_div("../data/syllables/tourney/clustering/")
+data_syllables_ifs = import_from_error_clustering_and_div("../data/syllables/ifs/clustering/")
+data_syllables = rbind(data_syllables_lexicase, data_syllables_tourney, data_syllables_ifs)
+data_syllables$succeeded = factor(data_syllables$succeeded, levels = c(TRUE, FALSE))
+data_syllables$treatment = factor(data_syllables$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### String Lengths Backwards
+
+```{r}
+data_string_lengths_backwards_lexicase = import_from_error_clustering_and_div("../data/string-lengths-backwards/lexicase/clustering/")
+data_string_lengths_backwards_tourney = import_from_error_clustering_and_div("../data/string-lengths-backwards/tourney/clustering/")
+data_string_lengths_backwards_ifs = import_from_error_clustering_and_div("../data/string-lengths-backwards/ifs/clustering/")
+data_string_lengths_backwards = rbind(data_string_lengths_backwards_lexicase, data_string_lengths_backwards_tourney, data_string_lengths_backwards_ifs)
+data_string_lengths_backwards$succeeded = factor(data_string_lengths_backwards$succeeded, levels = c(TRUE, FALSE))
+data_string_lengths_backwards$treatment = factor(data_string_lengths_backwards$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Negative To Zero
+
+```{r}
+data_negative_to_zero_lexicase = import_from_error_clustering_and_div("../data/negative-to-zero/lexicase/clustering/")
+data_negative_to_zero_tourney = import_from_error_clustering_and_div("../data/negative-to-zero/tourney/clustering/")
+data_negative_to_zero_ifs = import_from_error_clustering_and_div("../data/negative-to-zero/ifs/clustering/")
+data_negative_to_zero = rbind(data_negative_to_zero_lexicase, data_negative_to_zero_tourney, data_negative_to_zero_ifs)
+data_negative_to_zero$succeeded = factor(data_negative_to_zero$succeeded, levels = c(TRUE, FALSE))
+data_negative_to_zero$treatment = factor(data_negative_to_zero$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Doubles Letters
+
+```{r}
+data_double_letters_lexicase = import_from_error_clustering_and_div("../data/double-letters/lexicase/clustering/")
+data_double_letters_tourney = import_from_error_clustering_and_div("../data/double-letters/tourney/clustering/")
+data_double_letters_ifs = import_from_error_clustering_and_div("../data/double-letters/ifs/clustering/")
+data_double_letters = rbind(data_double_letters_lexicase, data_double_letters_tourney, data_double_letters_ifs)
+data_double_letters$succeeded = factor(data_double_letters$succeeded, levels = c(TRUE, FALSE))
+data_double_letters$treatment = factor(data_double_letters$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Scrabble Score
+
+```{r}
+data_scrabble_score_lexicase = import_from_error_clustering_and_div("../data/scrabble-score/lexicase/clustering/")
+data_scrabble_score_tourney = import_from_error_clustering_and_div("../data/scrabble-score/tourney/clustering/")
+data_scrabble_score_ifs = import_from_error_clustering_and_div("../data/scrabble-score/ifs/clustering/")
+data_scrabble_score = rbind(data_scrabble_score_lexicase, data_scrabble_score_tourney, data_scrabble_score_ifs)
+data_scrabble_score$succeeded = factor(data_scrabble_score$succeeded, levels = c(TRUE, FALSE))
+data_scrabble_score$treatment = factor(data_scrabble_score$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Checksum
+
+```{r}
+data_checksum_lexicase = import_from_error_clustering_and_div("../data/checksum/lexicase/clustering/")
+data_checksum_tourney = import_from_error_clustering_and_div("../data/checksum/tourney/clustering/")
+data_checksum_ifs = import_from_error_clustering_and_div("../data/checksum/ifs/clustering/")
+data_checksum = rbind(data_checksum_lexicase, data_checksum_tourney, data_checksum_ifs)
+data_checksum$succeeded = factor(data_checksum$succeeded, levels = c(TRUE, FALSE))
+data_checksum$treatment = factor(data_checksum$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Count Odds
+
+```{r}
+data_count_odds_lexicase = import_from_error_clustering_and_div("../data/count-odds/lexicase/clustering/")
+data_count_odds_tourney = import_from_error_clustering_and_div("../data/count-odds/tourney/clustering/")
+data_count_odds_ifs = import_from_error_clustering_and_div("../data/count-odds/ifs/clustering/")
+data_count_odds = rbind(data_count_odds_lexicase, data_count_odds_tourney, data_count_odds_ifs)
+data_count_odds$succeeded = factor(data_count_odds$succeeded, levels = c(TRUE, FALSE))
+data_count_odds$treatment = factor(data_count_odds$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+# Scatterplots of Data
+
+It's often nice to see every point of every run, showing the trends and where densest areas occur.
+
+## RSWN
+
+```{r}
+plot_all_diversity_lines_faceted(data_rswn)
+
+plot_all_clusters_lines_faceted(data_rswn)
+```
+
+## Syllables
+
+```{r}
+plot_all_diversity_lines_faceted(data_syllables)
+
+plot_all_clusters_lines_faceted(data_syllables)
+```
+
+## String Lengths Backwards
+
+```{r}
+plot_all_diversity_lines_faceted(data_string_lengths_backwards)
+
+plot_all_clusters_lines_faceted(data_string_lengths_backwards)
+```
+
+## Negative To Zero
+
+```{r}
+plot_all_diversity_lines_faceted(data_negative_to_zero)
+
+plot_all_clusters_lines_faceted(data_negative_to_zero)
+```
+
+## Double Letters
+
+```{r}
+plot_all_diversity_lines_faceted(data_double_letters)
+
+plot_all_clusters_lines_faceted(data_double_letters)
+```
+
+## Scrabble Score
+
+```{r}
+plot_all_diversity_lines_faceted(data_scrabble_score)
+
+plot_all_clusters_lines_faceted(data_scrabble_score)
+```
+
+## Checksum
+
+```{r}
+plot_all_diversity_lines_faceted(data_checksum)
+
+plot_all_clusters_lines_faceted(data_checksum)
+```
+
+## Count Odds
+
+```{r}
+plot_all_diversity_lines_faceted(data_count_odds)
+
+plot_all_clusters_lines_faceted(data_count_odds)
+```
+
+
+# Plot Medians and Quartiles
+
+## RSWN
+
+```{r}
+add_generational_success_counts_plot(data_rswn, plot_diversity_medians_and_quartiles(data_rswn))
+
+add_generational_success_counts_plot(data_rswn, plot_cluster_count_medians_and_quartiles(data_rswn))
+
+plot_cluster_count_medians_and_quartiles(data_rswn) + facet_grid(succeeded ~ ., labeller=label_both)
+```
+
+## Syllables
+
+```{r}
+add_generational_success_counts_plot(data_syllables, plot_diversity_medians_and_quartiles(data_syllables))
+
+add_generational_success_counts_plot(data_syllables, plot_cluster_count_medians_and_quartiles(data_syllables))
+```
+
+## String Lengths Backwards
+
+```{r}
+add_generational_success_counts_plot(data_string_lengths_backwards, plot_diversity_medians_and_quartiles(data_string_lengths_backwards))
+
+plot_diversity_medians_and_quartiles(data_string_lengths_backwards) + facet_grid(succeeded ~ ., labeller=label_both)
+
+add_generational_success_counts_plot(data_string_lengths_backwards, plot_cluster_count_medians_and_quartiles(data_string_lengths_backwards))
+
+plot_cluster_count_medians_and_quartiles(data_string_lengths_backwards) + facet_grid(succeeded ~ ., labeller=label_both)
+```
+
+## Negative To Zero
+
+```{r}
+add_generational_success_counts_plot(data_negative_to_zero, plot_diversity_medians_and_quartiles(data_negative_to_zero))
+
+add_generational_success_counts_plot(data_negative_to_zero, plot_cluster_count_medians_and_quartiles(data_negative_to_zero))
+
+plot_cluster_count_medians_and_quartiles(data_negative_to_zero) + facet_grid(succeeded ~ ., labeller=label_both)
+```
+
+## Double Letters
+
+```{r}
+add_generational_success_counts_plot(data_double_letters, plot_diversity_medians_and_quartiles(data_double_letters))
+
+add_generational_success_counts_plot(data_double_letters, plot_cluster_count_medians_and_quartiles(data_double_letters))
+
+plot_cluster_count_medians_and_quartiles(data_double_letters) + facet_grid(succeeded ~ ., labeller=label_both)
+```
+
+## Scrabble Score
+
+```{r}
+add_generational_success_counts_plot(data_scrabble_score, plot_diversity_medians_and_quartiles(data_scrabble_score))
+
+add_generational_success_counts_plot(data_scrabble_score, plot_cluster_count_medians_and_quartiles(data_scrabble_score))
+```
+
+## Checksum
+
+```{r}
+add_generational_success_counts_plot(data_checksum, plot_diversity_medians_and_quartiles(data_checksum))
+
+add_generational_success_counts_plot(data_checksum, plot_cluster_count_medians_and_quartiles(data_checksum))
+```
+
+## Count Odds
+
+```{r}
+add_generational_success_counts_plot(data_count_odds, plot_diversity_medians_and_quartiles(data_count_odds))
+
+add_generational_success_counts_plot(data_count_odds, plot_cluster_count_medians_and_quartiles(data_count_odds))
+```

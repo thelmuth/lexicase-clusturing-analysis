@@ -1,0 +1,190 @@
+---
+title: "Clustering Runs"
+author: "Tom Helmuth"
+date: "March 6, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+# Introduction:
+
+This document will try some plotting of data across full sets of runs.
+
+## Setup code
+
+```{r, message=FALSE}
+library('ggplot2')
+library('cluster')
+library('Hmisc')
+library("gridExtra")
+#library('apcluster')
+
+setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis/R_notebooks")
+
+source('../scripts/clustering.R')
+```
+
+# Replace Space With Newline + Lexicase
+
+## Import the Data
+
+```{r}
+# Copied from SO
+file_list = list.files(path="../data/RSWN/lexicase/clustering/", pattern="*.csv")
+myfiles = lapply(paste("../data/RSWN/lexicase/clustering/", file_list, sep=""), read.csv)
+
+all_data = do.call(rbind, myfiles)
+
+```
+
+## Some plots!
+
+```{r}
+plot(all_data$generation, all_data$cluster.count, pch=3, cex=0.3, col=rgb(0.3,0.4,0.6,0.5), ylim=c(0, 350))
+```
+
+```{r}
+plot(all_data$generation, all_data$error.diversity, pch=3, cex=0.3, col=rgb(0.3,0.4,0.6,0.5), ylim=c(0, 1))
+```
+
+# Replace Space With Newline + Tourney size 7
+
+## Import the Data
+
+```{r}
+# Copied from SO
+file_list_tourney = list.files(path="../data/RSWN/tourney/clustering/", pattern="*.csv")
+myfiles_tourney = lapply(paste("../data/RSWN/tourney/clustering/", file_list_tourney, sep=""), read.csv)
+
+all_data_tourney = do.call(rbind, myfiles_tourney)
+
+```
+
+## Some plots!
+
+```{r}
+plot(all_data_tourney$generation, all_data_tourney$cluster.count, pch=3, cex=0.3, col=rgb(0.3,0.4,0.6,0.5), ylim=c(0, 350))
+```
+
+```{r}
+plot(all_data_tourney$generation, all_data_tourney$error.diversity, pch=3, cex=0.3, col=rgb(0.3,0.4,0.6,0.5), ylim=c(0, 1))
+```
+
+# Replace Space With Newline + IFS size 7
+
+## Import the Data
+
+```{r}
+# Copied from SO
+file_list_ifs = list.files(path="../data/RSWN/ifs/clustering/", pattern="*.csv")
+myfiles_ifs = lapply(paste("../data/RSWN/ifs/clustering/", file_list_ifs, sep=""), read.csv)
+
+all_data_ifs = do.call(rbind, myfiles_ifs)
+
+```
+
+## Some plots!
+
+```{r RSWN IFS Clustering}
+plot(all_data_ifs$generation, all_data_ifs$cluster.count, pch=3, cex=0.3, col=rgb(0.3,0.4,0.6,0.5), ylim=c(0, 350))
+```
+
+```{r}
+plot(all_data_ifs$generation, all_data_ifs$error.diversity, pch=3, cex=0.3, col=rgb(0.3,0.4,0.6,0.5), ylim=c(0, 1))
+```
+
+# Plot medians
+
+```{r}
+all_rswn_data = rbind(all_data, all_data_tourney, all_data_ifs)
+
+all_rswn_data$treatment = factor(all_rswn_data$treatment, levels = c("lexicase", "tourney", "ifs"))
+
+rswn_div_plot <- ggplot(all_rswn_data, aes(x=generation, y=error.diversity,
+                                                            color=treatment)) + 
+  stat_summary(fun.data="median_hilow", conf.int=0.5, alpha=0.5) + theme(axis.title.x=element_blank())
+  #facet_grid(treatment ~ .)
+
+count_successes_for_gen <- function(data, gen) {
+  return(100-nrow(subset(data, generation==gen)))
+  }
+
+count_all_successes <- function(data) {
+  return(sapply(seq(0, 300), function (gen) count_successes_for_gen(data, gen)))
+}
+
+lexicase_success_counts = data.frame(generation=seq(0, 300), num.successes=count_all_successes(all_data))
+lexicase_success_counts$treatment = 'lexicase'
+tourney_success_counts = data.frame(generation=seq(0, 300), num.successes=count_all_successes(all_data_tourney))
+tourney_success_counts$treatment = 'tourney'
+ifs_success_counts = data.frame(generation=seq(0, 300), num.successes=count_all_successes(all_data_ifs))
+ifs_success_counts$treatment = 'ifs'
+
+success_counts = rbind(lexicase_success_counts, tourney_success_counts, ifs_success_counts)
+success_counts$treatment = factor(success_counts$treatment, levels = c("lexicase", "tourney", "ifs"))
+
+rswn_lex_success_plot <- ggplot(success_counts, aes(x=generation, y=num.successes, color=treatment)) + geom_line() + ylim(c(0,100))
+
+grid.arrange(arrangeGrob(rswn_div_plot, rswn_lex_success_plot, heights=c(3/4, 1/4), ncol=1))
+
+```
+
+```{r}
+ggplot(rbind(all_data, all_data_tourney, all_data_ifs), aes(x=generation, y=cluster.count,
+                                                            color=interaction(succeeded, treatment))) + 
+  stat_summary(fun.data="median_hilow", conf.int=0.5, alpha=0.8)
+  #facet_grid(treatment ~ .)
+```
+
+# Syllables + Lexicase
+
+## Import the Data
+
+```{r Import the Syllables Data}
+# Copied from SO
+file_list_syllables_lexicase = list.files(path="../data/syllables/lexicase/clustering/", pattern="*.csv")
+files_syllables_lexicase = lapply(paste("../data/syllables/lexicase/clustering/", file_list_syllables_lexicase, sep=""), read.csv)
+
+syllables_lexicase = do.call(rbind, files_syllables_lexicase)
+```
+
+## Some plots!
+
+```{r}
+plot(syllables_lexicase$generation, syllables_lexicase$cluster.count, pch=3, cex=0.3, col=rgb(0.3,0.4,0.6,0.5),
+     ylim=c(0, 700))
+```
+
+```{r}
+plot(syllables_lexicase$generation, syllables_lexicase$error.diversity, pch=3, cex=0.3, col=rgb(0.3,0.4,0.6,0.5), ylim=c(0, 1))
+```
+
+# Syllables + IFS Size 7
+
+## Import the Data
+
+```{r}
+# Copied from SO
+file_list_syllables_ifs = list.files(path="../data/syllables/ifs/clustering/", pattern="*.csv")
+files_syllables_ifs = lapply(paste("../data/syllables/ifs/clustering/", file_list_syllables_ifs, sep=""), read.csv)
+
+syllables_ifs = do.call(rbind, files_syllables_ifs)
+```
+
+## Some plots!
+
+```{r}
+plot(syllables_ifs$generation, syllables_ifs$cluster.count, pch=3, cex=0.3, col=rgb(0.3,0.4,0.6,0.5),
+     ylim=c(0, 700))
+```
+
+```{r}
+plot(syllables_ifs$generation, syllables_ifs$error.diversity, pch=3, cex=0.3, col=rgb(0.3,0.4,0.6,0.5), ylim=c(0, 1))
+```
+
+# To Do
+
+- Try clustering on test cases instead of individuals
+- Figure out what we want to plot
+- Try plots of confidence intervals of differences between lexicase and tourney/IFS

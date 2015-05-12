@@ -1,0 +1,169 @@
+---
+title: "Visualizing RSWN runs"
+author: "Nic McPhee and Tom Helmuth"
+date: "7 March 2015"
+output: html_document
+---
+
+```{r}
+library("ggplot2")
+library("plyr")
+```
+
+# Load the data
+
+Tom figured out [how to load data from a bunch of files in a directory](http://rpubs.com/thelmuth/clustering_runs), so I'm borrowing that code.
+
+Before loading the data, though, I've got a function that takes the data from a single run and pads it out all the way to generation 300 if necessary. This just copies the data from the last generation all the way to the end. **An alternative would be to set the number of clusters to 1 and the error diversity to 0.**
+
+```{r}
+pad_frame <- function(fr) {
+  last_gen = max(fr$generation)
+  if (last_gen == 300) {
+    return(fr)
+  }
+  num_missing_gens = 300 - last_gen
+  padding = data.frame(X = seq(last_gen+1, 300),
+                       run.num = rep((fr$run.num)[1], num_missing_gens),
+                       problem = rep((fr$problem)[1], num_missing_gens),
+                       treatment = rep((fr$treatment)[1], num_missing_gens),
+                       succeeded = rep((fr$succeeded)[1], num_missing_gens),
+                       height = rep((fr$height)[1], num_missing_gens),
+                       normalization.function = rep((fr$normalization.function)[1], 
+                                                    num_missing_gens),
+                       generation = seq(last_gen, 299),
+#                        cluster.count = rep(1,
+#                                            num_missing_gens),
+#                        error.diversity = rep(1/1000,
+#                                              num_missing_gens)
+                       cluster.count = rep((fr$cluster.count)[last_gen],
+                                           num_missing_gens),
+                       error.diversity = rep((fr$error.diversity)[last_gen],
+                                             num_missing_gens)
+                       )
+  # result = rbind(fr, padding)
+  result = fr
+  return(result)
+}
+```
+
+First the lexicase data:
+
+```{r}
+lexicase_file_list = list.files(path="../data/RSWN/lexicase/clustering/", 
+                                pattern="*.csv")
+lexicase_frames = lapply(paste("../data/RSWN/lexicase/clustering/", 
+                               lexicase_file_list, sep=""), read.csv)
+
+padded_lexicase_frames = lapply(lexicase_frames, pad_frame)
+
+lexicase_data = do.call(rbind, padded_lexicase_frames)
+```
+
+Now the tournament (size 7) data:
+
+```{r}
+tourney_file_list = list.files(path="../data/RSWN/tourney/clustering/", 
+                               pattern="*.csv")
+tourney_frames = lapply(paste("../data/RSWN/tourney/clustering/", 
+                              tourney_file_list, sep=""), read.csv)
+
+padded_tourney_frames = lapply(tourney_frames, pad_frame)
+
+tourney_data = do.call(rbind, padded_tourney_frames)
+```
+
+Let's combine all that into a single great big data frame:
+
+```{r}
+rswn_data <- rbind(lexicase_data, tourney_data)
+```
+
+# Plotting all the RSWN error diversity results
+
+Can we plot all the error diversity in a way that is informative? If we facet the data it's very clear that the diversity numbers are generally _much_ higher for lexicase than for tournament selection. It's not super obvious what differences there are between the successful and unsuccessful runs, though.
+
+```{r}
+ggplot(rswn_data, aes(x=generation, y=error.diversity, group=run.num)) +
+  geom_line(alpha=0.25) +
+  facet_grid(succeeded ~ treatment)
+```
+
+Using `geom_smooth()` to coalesce all the data also makes it clear that lexicase has _much_ higher diversity numbers than tournament selection. (It's not clear how meaningful the confidence intervals are since `stat_smooth`'s confidence interval stats assume the data is normally distributed, which this data almost certainly isn't.)
+
+It's interesting that the diversity numbers for successful runs are consistently below those for unsuccessful runs. This is presumably because in the generations just before success, the diversity values drop as the population converges on a successful approach.
+
+```{r}
+ggplot(rswn_data, aes(x=generation, y=error.diversity,
+                      color=interaction(succeeded, treatment))) +
+  geom_point(alpha=0.02) +
+  geom_smooth() +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(color="Treatment . Succeeded")
+```
+
+# Plotting all the RSWN clustering results
+
+Can we plot all the clustering data in a way that is informative? Let's start by faceting on both treatment (lexicase and tournament) and whether the run succeeded. This definitely suggests that lexicase tends towards more clusters than tournament. The visualization is somewhat skewed, however, by the fact that successful runs end early so all we're seeing out at the ends are a small number of runs that succeeded late.
+
+```{r}
+ggplot(rswn_data, aes(x=generation, y=cluster.count, group=run.num)) +
+  geom_line(alpha=0.25) +
+  facet_grid(succeeded ~ treatment)
+```
+
+Another way to put it all on one plot is to use smoothing to coalesce the data. One major concern about this, though, is the smoothing assumes normally distributed data, and our data is quite certainly not normally distributed.
+
+That said, this plot helps make it clear that lexicase generally has substantially more clusters than tournament selection, which is cool. In both cases the successful lines are more "wiggly" than the unsuccessful lines; this probably at least in part because successful runs end early, which probably causes the smoothing to "jump" in the absense of the runs that just ended. 
+
+It's also likely that successful runs eventually have a drop in the number of clusters, as that's probably what happens when the run starts to "discover" combinations that can solve a broad range of test cases. It's interesting that the number of clusters in the failed lexicase runs keep climbing up (if but slowly by the end), and the successful lexicase runs show cycles of climbing and falling number of clusters. My guess is the drops are when runs are "discovering" important things, which often then leads to success. Those successful runs are removed, which then causes the number of clusters to jump/climb up, until there's another group of important discoveries, which leads to a new drop.
+
+Have we ever looked at the distribution of when successful runs end? I'm guessing that lexicase has a more spread out distribution, where if tournament doesn't succeed early it's very unlikely to ever succeed. Thus adding another 100 generations would be of very little value with tournament selection, but might lead to several more successes for lexicase.
+
+```{r}
+ggplot(rswn_data, aes(x=generation, y=cluster.count,
+                      color=interaction(treatment, succeeded))) +
+  geom_point(alpha=0.02) +
+  geom_smooth() +
+  coord_cartesian(ylim = c(0, 100)) +
+  labs(color="Treatment . Succeeded")
+```
+
+# Plotting just lexicase clustering results
+
+As well as plotting everything, I tried several different ways to visualize just the lexicase runs, focusing on trying to see the differences between successful and unsuccessful runs. None of these are great, though.
+
+The first colors the points, and uses `geom_smooth()` to try to coalesce the two groups. One major problem with this, though, is that the successful runs end early, and the smoothed curve ends up being only about runs that hadn't ended at that point. The other big problem is that the confidence intervals are constructed assuming a normal distribution, and it's pretty clear that our data is almost certainly not anywhere close to normally distributed.
+
+```{r}
+ggplot(lexicase_data, aes(x=generation, y=cluster.count, color=succeeded)) +
+  geom_point(alpha=0.05) +
+  geom_smooth()
+```
+
+Then I tried preserving the lines because that had been useful when we only had a few runs, but with this many runs it's really not very helpful as the lines just pile up on top of each other.
+
+```{r}
+ggplot(lexicase_data, aes(x=generation, y=cluster.count, 
+                          color=succeeded, group=run.num)) +
+  geom_line(alpha=0.25)
+```
+
+Then I split the successful and unsuccessful runs into two different facet panes in the hopes that it might be easier to see what's happening. It does help, but I'm not sure what it _says_. There seem to be some groups into bands in the successful runs, but I'm not sure if (a) that's "real" and (b) what we'd say about it.
+
+```{r}
+ggplot(lexicase_data, aes(x=generation, y=cluster.count, 
+                          color=succeeded, group=run.num)) +
+  geom_line(alpha=0.25) +
+  facet_grid(. ~ succeeded)
+```
+
+I tried using boxplots in the hopes that might help us see the distributions more clearly, grouping generations into clumps of 25 to reduce the number of boxes to a visually manageable number. That really didn't work all that well. It looks like the successful runs _might_ have a tendency toward smaller values, but that's badly skewed by the problem that successful runs end early, so the number of data points in the "successful" boxplots gets smaller and smaller as you move to the right.
+
+```{r}
+ggplot(lexicase_data, aes(x=generation, y=cluster.count,
+                          color=succeeded, 
+                          group=interaction(succeeded, 
+                                            round_any(generation, 25, floor)))) +
+  geom_boxplot(alpha=0.25)
+```

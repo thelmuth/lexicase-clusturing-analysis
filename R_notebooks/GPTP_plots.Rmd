@@ -1,0 +1,283 @@
+---
+title: "GPTP Plots"
+author: "Tom Helmuth"
+date: "March 20, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+# Introduction
+
+The goal of this document is to create the plots for the GPTP paper.
+
+## Setup Code
+
+```{r, message=FALSE}
+library('ggplot2')
+library('cluster')
+library('Hmisc')
+library("gridExtra")
+library("plyr")
+library("reshape")
+
+setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis/R_notebooks")
+
+source('../scripts/clustering.R')
+
+grayPalette3 <- c("#333333", "#000000", "#555555")
+grayPalette3light <- c("#888888", "#555555", "#AAAAAA")
+```
+
+## Import Data
+
+### Replace Space With Newline
+
+```{r}
+data_rswn_lexicase = import_from_error_clustering_and_div("../data/RSWN/lexicase/clustering/")
+data_rswn_tourney = import_from_error_clustering_and_div("../data/RSWN/tourney/clustering/")
+data_rswn_ifs = import_from_error_clustering_and_div("../data/RSWN/ifs/clustering/")
+data_rswn = rbind(data_rswn_lexicase, data_rswn_tourney, data_rswn_ifs)
+data_rswn$succeeded = factor(data_rswn$succeeded, levels = c(TRUE, FALSE))
+data_rswn$treatment = factor(data_rswn$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Syllables
+
+```{r}
+data_syllables_lexicase = import_from_error_clustering_and_div("../data/syllables/lexicase/clustering/")
+data_syllables_tourney = import_from_error_clustering_and_div("../data/syllables/tourney/clustering/")
+data_syllables_ifs = import_from_error_clustering_and_div("../data/syllables/ifs/clustering/")
+data_syllables = rbind(data_syllables_lexicase, data_syllables_tourney, data_syllables_ifs)
+data_syllables$succeeded = factor(data_syllables$succeeded, levels = c(TRUE, FALSE))
+data_syllables$treatment = factor(data_syllables$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### String Lengths Backwards
+
+```{r}
+data_string_lengths_backwards_lexicase = import_from_error_clustering_and_div("../data/string-lengths-backwards/lexicase/clustering/")
+data_string_lengths_backwards_tourney = import_from_error_clustering_and_div("../data/string-lengths-backwards/tourney/clustering/")
+data_string_lengths_backwards_ifs = import_from_error_clustering_and_div("../data/string-lengths-backwards/ifs/clustering/")
+data_string_lengths_backwards = rbind(data_string_lengths_backwards_lexicase, data_string_lengths_backwards_tourney, data_string_lengths_backwards_ifs)
+data_string_lengths_backwards$succeeded = factor(data_string_lengths_backwards$succeeded, levels = c(TRUE, FALSE))
+data_string_lengths_backwards$treatment = factor(data_string_lengths_backwards$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Negative To Zero
+
+```{r}
+data_negative_to_zero_lexicase = import_from_error_clustering_and_div("../data/negative-to-zero/lexicase/clustering/")
+data_negative_to_zero_tourney = import_from_error_clustering_and_div("../data/negative-to-zero/tourney/clustering/")
+data_negative_to_zero_ifs = import_from_error_clustering_and_div("../data/negative-to-zero/ifs/clustering/")
+data_negative_to_zero = rbind(data_negative_to_zero_lexicase, data_negative_to_zero_tourney, data_negative_to_zero_ifs)
+data_negative_to_zero$succeeded = factor(data_negative_to_zero$succeeded, levels = c(TRUE, FALSE))
+data_negative_to_zero$treatment = factor(data_negative_to_zero$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Doubles Letters
+
+```{r}
+data_double_letters_lexicase = import_from_error_clustering_and_div("../data/double-letters/lexicase/clustering/")
+data_double_letters_tourney = import_from_error_clustering_and_div("../data/double-letters/tourney/clustering/")
+data_double_letters_ifs = import_from_error_clustering_and_div("../data/double-letters/ifs/clustering/")
+data_double_letters = rbind(data_double_letters_lexicase, data_double_letters_tourney, data_double_letters_ifs)
+data_double_letters$succeeded = factor(data_double_letters$succeeded, levels = c(TRUE, FALSE))
+data_double_letters$treatment = factor(data_double_letters$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Scrabble Score
+
+```{r}
+data_scrabble_score_lexicase = import_from_error_clustering_and_div("../data/scrabble-score/lexicase/clustering/")
+data_scrabble_score_tourney = import_from_error_clustering_and_div("../data/scrabble-score/tourney/clustering/")
+data_scrabble_score_ifs = import_from_error_clustering_and_div("../data/scrabble-score/ifs/clustering/")
+data_scrabble_score = rbind(data_scrabble_score_lexicase, data_scrabble_score_tourney, data_scrabble_score_ifs)
+data_scrabble_score$succeeded = factor(data_scrabble_score$succeeded, levels = c(TRUE, FALSE))
+data_scrabble_score$treatment = factor(data_scrabble_score$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Checksum
+
+```{r}
+data_checksum_lexicase = import_from_error_clustering_and_div("../data/checksum/lexicase/clustering/")
+data_checksum_tourney = import_from_error_clustering_and_div("../data/checksum/tourney/clustering/")
+data_checksum_ifs = import_from_error_clustering_and_div("../data/checksum/ifs/clustering/")
+data_checksum = rbind(data_checksum_lexicase, data_checksum_tourney, data_checksum_ifs)
+data_checksum$succeeded = factor(data_checksum$succeeded, levels = c(TRUE, FALSE))
+data_checksum$treatment = factor(data_checksum$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+### Count Odds
+
+```{r}
+data_count_odds_lexicase = import_from_error_clustering_and_div("../data/count-odds/lexicase/clustering/")
+data_count_odds_tourney = import_from_error_clustering_and_div("../data/count-odds/tourney/clustering/")
+data_count_odds_ifs = import_from_error_clustering_and_div("../data/count-odds/ifs/clustering/")
+data_count_odds = rbind(data_count_odds_lexicase, data_count_odds_tourney, data_count_odds_ifs)
+data_count_odds$succeeded = factor(data_count_odds$succeeded, levels = c(TRUE, FALSE))
+data_count_odds$treatment = factor(data_count_odds$treatment, levels = c("lexicase", "tourney", "ifs"))
+```
+
+# Modify Some Functions for Publication Plots
+
+```{r}
+shape_size <- 4
+
+# Plots diversity medians and quartiles of data. Takes optional quartiles_percent, which tells what percent of the center data to include
+plot_diversity_medians_and_quartiles <- function(data, quartiles_percent = 0.5, legend.pos = "right", legend.just = c(1,0.5)){
+  p <- ggplot(data, aes(x=generation, y=error.diversity, color=treatment, fill=treatment, shape = treatment)) + #, linetype=treatment)) + 
+    stat_summary(fun.data="median_hilow", conf.int=quartiles_percent, geom = "smooth", size=1) + #, geom = "errorbar") + #, alpha=0.5) +
+    #facet_grid(. ~ treatment, labeller=label_both) +
+    stat_summary(data=subset(data, generation %% 30 == 15), fun.y = median, geom="point", size = shape_size) +
+    theme_bw() +
+    coord_cartesian(ylim = c(0,1)) +
+    labs(y = "Error Diversity") +
+    scale_colour_manual(values = grayPalette3) +
+    scale_fill_manual(values = grayPalette3light) +
+    theme(legend.title=element_blank(), legend.justification=c(1,0.5), legend.position=legend.pos, legend.background = element_rect(colour="black", size=0.1), legend.key = element_blank()) # Make changes to legend
+  
+  return(p)
+}
+
+# Plots clusters medians and quartiles of data. Takes optional quartiles_percent, which tells what percent of the center data to include
+plot_cluster_count_medians_and_quartiles <- function(data, quartiles_percent = 0.5, legend.pos = "right", legend.just = c(1,0.5)){            
+
+  p <- ggplot(data, aes(x=generation, y=cluster.count, color=treatment, fill=treatment, shape = treatment)) + 
+    stat_summary(fun.data="median_hilow", conf.int=quartiles_percent, geom = "smooth", size=1) +
+    stat_summary(data=subset(data, generation %% 30 == 15), fun.y = median, geom="point", size = shape_size) +
+    theme_bw() +
+    labs(y = "Cluster Count") +
+    scale_colour_manual(values = grayPalette3) +
+    scale_fill_manual(values = grayPalette3light) +
+    theme(legend.title=element_blank(), legend.justification = legend.just, legend.position=legend.pos, legend.background = element_rect(colour="black", size=0.1), legend.key = element_blank()) # Make changes to legend
+  
+  return(p)
+}
+
+
+# Makes a plot giving the number of successes at or before each generation
+plot_generational_success_counts <- function(data){
+  success_counts = get_generational_success_counts(data)
+  
+  first_treatment = levels(data$treatment)[1]
+  num_runs_per_treatment = nrow(subset(data, treatment==first_treatment & generation == 0))
+  
+  p <- ggplot(success_counts, aes(x=generation, y=num.successes, color=treatment, shape=treatment)) +
+    geom_line(size=1) +
+    geom_point(data=subset(success_counts, generation %% 30 == 15), size = shape_size) +
+    ylim(c(0, num_runs_per_treatment)) +
+    theme_bw() +
+    scale_colour_manual(values = grayPalette3) +
+    labs(x = "Generation", y = "Successes") +
+    theme(plot.margin = unit(c(-1, 1, 0.5, 0.5), "lines")) + # plot.margin   margin around entire plot (unit with the sizes of the top, right, bottom, and left margins) 
+    theme(legend.position="none") # Removes legend
+  
+  # NOTE: Can type `theme_get()` to see all the properties of theme, including the default margin of c(1, 1, 0.5, 0.5)
+  
+  return(p)
+}
+```
+
+# Plot Medians and Quartiles
+
+Note: 8in x 6in seems to work well for these plots.
+
+## RSWN
+
+```{r}
+rswn_mq <- plot_diversity_medians_and_quartiles(data_rswn, legend.pos = c(1, 0.5))
+
+#rswn_mq
+
+#pdf("whaaaat.pdf", width=8, height=6)
+
+add_generational_success_counts_plot(data_rswn, rswn_mq)
+
+#print(plot)
+
+# Finish printing
+#dev.off()
+
+
+add_generational_success_counts_plot(data_rswn, plot_cluster_count_medians_and_quartiles(data_rswn, legend.pos = c(.2, 0.8))) #replace-space-with-newline-cluster
+```
+
+## Syllables
+
+```{r}
+add_generational_success_counts_plot(data_syllables, plot_diversity_medians_and_quartiles(data_syllables, legend.pos = c(1, 0.2)))
+
+add_generational_success_counts_plot(data_syllables, plot_cluster_count_medians_and_quartiles(data_syllables, legend.pos = c(1, 0.5)))
+```
+
+## String Lengths Backwards
+
+```{r}
+add_generational_success_counts_plot(data_string_lengths_backwards, plot_diversity_medians_and_quartiles(data_string_lengths_backwards, legend.pos = c(1, .8), legend.just = c(1, 1)))
+
+add_generational_success_counts_plot(data_string_lengths_backwards, plot_cluster_count_medians_and_quartiles(data_string_lengths_backwards, legend.pos = c(0.2, 0.8)))
+```
+
+## Negative to Zero
+
+```{r}
+add_generational_success_counts_plot(data_negative_to_zero, plot_diversity_medians_and_quartiles(data_negative_to_zero, legend.pos = c(1, 0.15)))
+
+add_generational_success_counts_plot(data_negative_to_zero, plot_cluster_count_medians_and_quartiles(data_negative_to_zero, legend.pos = c(0.2, 0.8)))
+```
+
+## Double Letters
+
+```{r}
+add_generational_success_counts_plot(data_double_letters, plot_diversity_medians_and_quartiles(data_double_letters, legend.pos = c(1, 0.2)))
+
+add_generational_success_counts_plot(data_double_letters, plot_cluster_count_medians_and_quartiles(data_double_letters, legend.pos = c(1, 0.8)))
+```
+
+## Scrabble Score
+
+```{r}
+add_generational_success_counts_plot(data_scrabble_score, plot_diversity_medians_and_quartiles(data_scrabble_score, legend.pos = c(1, 0.2)))
+
+add_generational_success_counts_plot(data_scrabble_score, plot_cluster_count_medians_and_quartiles(data_scrabble_score, legend.pos = c(0.2, 0.8)))
+```
+
+## Checksum
+
+```{r}
+add_generational_success_counts_plot(data_checksum, plot_diversity_medians_and_quartiles(data_checksum, legend.pos = c(1, 0.2)))
+
+add_generational_success_counts_plot(data_checksum, plot_cluster_count_medians_and_quartiles(data_checksum, legend.pos = c(0.2, 0.8)))
+```
+
+## Count Odds
+
+```{r}
+add_generational_success_counts_plot(data_count_odds, plot_diversity_medians_and_quartiles(data_count_odds, legend.pos = c(1, 0.2)))
+
+add_generational_success_counts_plot(data_count_odds, plot_cluster_count_medians_and_quartiles(data_count_odds, legend.pos = c(1, 0.36)))
+```
+
+# Plot confidence intervals of differences
+
+```{r}
+wilcox_ci <- function (data, gen, first_treatment, second_treatment, value, confidence.level = 0.95) {
+  gen_data = subset(data, generation==gen)
+  first_data = subset(gen_data, treatment == first_treatment)
+  second_data = subset(gen_data, treatment == second_treatment)
+  wt <- wilcox.test(first_data[[value]],
+                    second_data[[value]], 
+                    conf.int=TRUE,
+                    conf.level=confidence.level)
+  return(wt$conf.int)
+}
+```
+
+```{r}
+ggplot(melt(sapply(seq(0, 300), function (gen) wilcox_ci(data_rswn, gen, 'lexicase', 'tourney', 'error.diversity'))), aes(x = X2 - 1, y=value, group=X1)) +
+  geom_line()
+
+ggplot(melt(sapply(seq(0, 300), function (gen) wilcox_ci(data_rswn, gen, 'lexicase', 'tourney', 'cluster.count'))), aes(x = X2 - 1, y=value, group=X1)) +
+  geom_line()
+```
