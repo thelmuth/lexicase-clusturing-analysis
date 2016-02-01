@@ -1,0 +1,169 @@
+---
+title: "Clustering Lexicase-Tournament Selection"
+author: "Tom Helmuth"
+date: "June 1, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+# Introduction
+
+The goal of this document is to look at the clustering and diversity data from the lexicase-touranment runs, and compare them with lexicase and tournament individually.
+
+## Setup Code
+
+```{r, message=FALSE}
+library('ggplot2')
+library('cluster')
+library('Hmisc')
+library("gridExtra")
+library("plyr")
+
+setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis/R_notebooks")
+
+source('../scripts/clustering.R')
+```
+
+## Import Data
+
+### Replace Space With Newline
+
+```{r}
+data_rswn_lexicase = import_from_error_clustering_and_div("../data/RSWN/lexicase/clustering/")
+data_rswn_tourney = import_from_error_clustering_and_div("../data/RSWN/tourney/clustering/")
+data_rswn_ifs = import_from_error_clustering_and_div("../data/RSWN/ifs/clustering/")
+data_rswn_ltk = import_from_error_clustering_and_div("../data/RSWN/lexicase-tourney-keep/clustering/")
+data_rswn_ltr = import_from_error_clustering_and_div("../data/RSWN/lexicase-tourney-remove/clustering/")
+data_rswn = rbind(data_rswn_lexicase, data_rswn_tourney, data_rswn_ifs, data_rswn_ltk, data_rswn_ltr)
+data_rswn$succeeded = factor(data_rswn$succeeded, levels = c(TRUE, FALSE))
+data_rswn$treatment = factor(data_rswn$treatment, levels = c("lexicase", "tourney", "ifs", "lexicase-tourney-keep", "lexicase-tourney-remove"))
+```
+
+### Syllables
+
+```{r}
+data_syllables_lexicase = import_from_error_clustering_and_div("../data/syllables/lexicase/clustering/")
+data_syllables_tourney = import_from_error_clustering_and_div("../data/syllables/tourney/clustering/")
+data_syllables_ifs = import_from_error_clustering_and_div("../data/syllables/ifs/clustering/")
+data_syllables_ltk = import_from_error_clustering_and_div("../data/syllables/lexicase-tourney-keep/clustering/")
+data_syllables_ltr = import_from_error_clustering_and_div("../data/syllables/lexicase-tourney-remove/clustering/")
+data_syllables = rbind(data_syllables_lexicase, data_syllables_tourney, data_syllables_ifs, data_syllables_ltk, data_syllables_ltr)
+data_syllables$succeeded = factor(data_syllables$succeeded, levels = c(TRUE, FALSE))
+data_syllables$treatment = factor(data_syllables$treatment, levels = c("lexicase", "tourney", "ifs", "lexicase-tourney-keep", "lexicase-tourney-remove"))
+```
+
+### String Lengths Backwards
+
+```{r}
+data_string_lengths_backwards_lexicase = import_from_error_clustering_and_div("../data/string-lengths-backwards/lexicase/clustering/")
+data_string_lengths_backwards_tourney = import_from_error_clustering_and_div("../data/string-lengths-backwards/tourney/clustering/")
+data_string_lengths_backwards_ifs = import_from_error_clustering_and_div("../data/string-lengths-backwards/ifs/clustering/")
+data_string_lengths_backwards_ltk = import_from_error_clustering_and_div("../data/string-lengths-backwards/lexicase-tourney-keep/clustering/")
+data_string_lengths_backwards_ltr = import_from_error_clustering_and_div("../data/string-lengths-backwards/lexicase-tourney-remove/clustering/")
+data_string_lengths_backwards = rbind(data_string_lengths_backwards_lexicase, data_string_lengths_backwards_tourney, data_string_lengths_backwards_ifs, data_string_lengths_backwards_ltk, data_string_lengths_backwards_ltr)
+data_string_lengths_backwards$succeeded = factor(data_string_lengths_backwards$succeeded, levels = c(TRUE, FALSE))
+data_string_lengths_backwards$treatment = factor(data_string_lengths_backwards$treatment, levels = c("lexicase", "tourney", "ifs", "lexicase-tourney-keep", "lexicase-tourney-remove"))
+```
+
+### Negative To Zero
+
+```{r}
+data_negative_to_zero_lexicase = import_from_error_clustering_and_div("../data/negative-to-zero/lexicase/clustering/")
+data_negative_to_zero_tourney = import_from_error_clustering_and_div("../data/negative-to-zero/tourney/clustering/")
+data_negative_to_zero_ifs = import_from_error_clustering_and_div("../data/negative-to-zero/ifs/clustering/")
+data_negative_to_zero_ltk = import_from_error_clustering_and_div("../data/negative-to-zero/lexicase-tourney-keep/clustering/")
+data_negative_to_zero_ltr = import_from_error_clustering_and_div("../data/negative-to-zero/lexicase-tourney-remove/clustering/")
+data_negative_to_zero = rbind(data_negative_to_zero_lexicase, data_negative_to_zero_tourney, data_negative_to_zero_ifs, data_negative_to_zero_ltk, data_negative_to_zero_ltr)
+data_negative_to_zero$succeeded = factor(data_negative_to_zero$succeeded, levels = c(TRUE, FALSE))
+data_negative_to_zero$treatment = factor(data_negative_to_zero$treatment, levels = c("lexicase", "tourney", "ifs", "lexicase-tourney-keep", "lexicase-tourney-remove"))
+```
+
+### Doubles Letters
+
+```{r}
+data_double_letters_lexicase = import_from_error_clustering_and_div("../data/double-letters/lexicase/clustering/")
+data_double_letters_tourney = import_from_error_clustering_and_div("../data/double-letters/tourney/clustering/")
+data_double_letters_ifs = import_from_error_clustering_and_div("../data/double-letters/ifs/clustering/")
+data_double_letters_ltk = import_from_error_clustering_and_div("../data/double-letters/lexicase-tourney-keep/clustering/")
+data_double_letters_ltr = import_from_error_clustering_and_div("../data/double-letters/lexicase-tourney-remove/clustering/")
+data_double_letters = rbind(data_double_letters_lexicase, data_double_letters_tourney, data_double_letters_ifs, data_double_letters_ltk, data_double_letters_ltr)
+data_double_letters$succeeded = factor(data_double_letters$succeeded, levels = c(TRUE, FALSE))
+data_double_letters$treatment = factor(data_double_letters$treatment, levels = c("lexicase", "tourney", "ifs", "lexicase-tourney-keep", "lexicase-tourney-remove"))
+```
+
+### Count Odds
+
+```{r}
+data_count_odds_lexicase = import_from_error_clustering_and_div("../data/count-odds/lexicase/clustering/")
+data_count_odds_tourney = import_from_error_clustering_and_div("../data/count-odds/tourney/clustering/")
+data_count_odds_ifs = import_from_error_clustering_and_div("../data/count-odds/ifs/clustering/")
+data_count_odds_ltk = import_from_error_clustering_and_div("../data/count-odds/lexicase-tourney-keep/clustering/")
+data_count_odds_ltr = import_from_error_clustering_and_div("../data/count-odds/lexicase-tourney-remove/clustering/")
+data_count_odds = rbind(data_count_odds_lexicase, data_count_odds_tourney, data_count_odds_ifs, data_count_odds_ltk, data_count_odds_ltr)
+data_count_odds$succeeded = factor(data_count_odds$succeeded, levels = c(TRUE, FALSE))
+data_count_odds$treatment = factor(data_count_odds$treatment, levels = c("lexicase", "tourney", "ifs", "lexicase-tourney-keep", "lexicase-tourney-remove"))
+```
+
+
+# Plot Medians and Quartiles
+
+## RSWN
+
+```{r}
+source('../scripts/clustering.R')
+
+add_generational_success_counts_plot(data_rswn, plot_diversity_medians_and_quartiles(data_rswn))
+
+add_generational_success_counts_plot(data_rswn, plot_cluster_count_medians_and_quartiles(data_rswn))
+
+#plot_cluster_count_medians_and_quartiles(data_rswn) + facet_grid(succeeded ~ ., labeller=label_both)
+```
+
+## Syllables
+
+```{r}
+add_generational_success_counts_plot(data_syllables, plot_diversity_medians_and_quartiles(data_syllables))
+
+add_generational_success_counts_plot(data_syllables, plot_cluster_count_medians_and_quartiles(data_syllables))
+```
+
+## String Lengths Backwards
+
+```{r}
+add_generational_success_counts_plot(data_string_lengths_backwards, plot_diversity_medians_and_quartiles(data_string_lengths_backwards))
+
+#plot_diversity_medians_and_quartiles(data_string_lengths_backwards) + facet_grid(succeeded ~ ., labeller=label_both)
+
+add_generational_success_counts_plot(data_string_lengths_backwards, plot_cluster_count_medians_and_quartiles(data_string_lengths_backwards))
+
+#plot_cluster_count_medians_and_quartiles(data_string_lengths_backwards) + facet_grid(succeeded ~ ., labeller=label_both)
+```
+
+## Negative To Zero
+
+```{r}
+add_generational_success_counts_plot(data_negative_to_zero, plot_diversity_medians_and_quartiles(data_negative_to_zero))
+
+add_generational_success_counts_plot(data_negative_to_zero, plot_cluster_count_medians_and_quartiles(data_negative_to_zero))
+
+#plot_cluster_count_medians_and_quartiles(data_negative_to_zero) + facet_grid(succeeded ~ ., labeller=label_both)
+```
+
+## Double Letters
+
+```{r}
+add_generational_success_counts_plot(data_double_letters, plot_diversity_medians_and_quartiles(data_double_letters))
+
+add_generational_success_counts_plot(data_double_letters, plot_cluster_count_medians_and_quartiles(data_double_letters))
+
+#plot_cluster_count_medians_and_quartiles(data_double_letters) + facet_grid(succeeded ~ ., labeller=label_both)
+```
+
+## Count Odds
+
+```{r}
+add_generational_success_counts_plot(data_count_odds, plot_diversity_medians_and_quartiles(data_count_odds))
+
+add_generational_success_counts_plot(data_count_odds, plot_cluster_count_medians_and_quartiles(data_count_odds))
+```
