@@ -4,6 +4,9 @@ library("plyr")
 
 #setwd("~/Documents/R/Clustering/lexicase-clusturing-analysis")
 
+# Colorblind-friendly palet
+cbbPalette <- c("#E69F00", "#56B4E9", "#000000", "#009E73", "#D55E00", "#CC79A7", "#F0E442", "#0072B2")
+
 #####################################################################
 ## Functions for working with data files
 #####################################################################
@@ -106,7 +109,7 @@ count_clusters = function(clustering_data, height) {
   agnes_results <- agnes(clustering_data, metric = "manhattan")
   num_clusters <- sum(agnes_results$height>height) + 1
   
-  #plot(agnes_results, which.plots=2)
+  plot(agnes_results, which.plots=2)
   
   print(sprintf("  Number of clusters is: %i", num_clusters))
   
@@ -207,8 +210,10 @@ plot_all_clusters_lines_faceted <- function(data) {
 # Plots diversity medians and quartiles of data. Takes optional quartiles_percent, which tells what percent of the center data to include
 plot_diversity_medians_and_quartiles <- function(data, quartiles_percent = 0.5){
   p <- ggplot(data, aes(x=generation, y=error.diversity, color=treatment)) + 
-    stat_summary(fun.data="median_hilow", conf.int=quartiles_percent, alpha=0.5) +
+    stat_summary(fun.data="median_hilow", fun.args=list(conf.int=quartiles_percent), alpha=0.5) +
+#    stat_summary(fun.data="median_hilow", alpha=0.5) +
     theme_bw() +
+    scale_colour_manual(values=cbbPalette) +
     ylim(c(0,1))
   return(p)
 }
@@ -222,8 +227,9 @@ plot_cluster_count_medians_and_quartiles <- function(data, quartiles_percent = 0
 #   }))
 
   p <- ggplot(data, aes(x=generation, y=cluster.count, color=treatment)) + 
-    stat_summary(fun.data="median_hilow", conf.int=quartiles_percent, alpha=0.5) +
-    theme_bw()
+    stat_summary(fun.data="median_hilow", fun.args=list(conf.int=quartiles_percent), alpha=0.5) +
+    theme_bw() +
+    scale_colour_manual(values=cbbPalette)
   return(p)
 }
 
@@ -237,7 +243,8 @@ plot_generational_success_counts <- function(data){
   p <- ggplot(success_counts, aes(x=generation, y=num.successes, color=treatment)) +
     geom_line(size=1) +
     ylim(c(0, num_runs_per_treatment)) +
-    theme_bw()
+    theme_bw() +
+    scale_colour_manual(values=cbbPalette)
   
   return(p)
 }
